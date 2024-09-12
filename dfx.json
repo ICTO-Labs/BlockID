@@ -1,37 +1,46 @@
 {
-  "canisters": {
-    "BlockID_backend": {
-      "main": "src/BlockID_backend/main.mo",
-      "type": "motoko"
+"canisters": {
+    "backend": {
+        "main": "src/backend/main.mo",
+        "type": "motoko"
     },
-    "BlockID_frontend": {
-      "dependencies": [
-        "BlockID_backend"
-      ],
-      "source": [
-        "src/BlockID_frontend/dist"
-      ],
-      "type": "assets",
-      "workspace": "BlockID_frontend"
+    "validate":{
+        "type": "rust",
+        "package": "validate",
+        "candid": "src/rust/validate/validate.did"
+    },
+    "simulator": {
+        "main": "src/backend/simulator.mo",
+        "type": "motoko"
+    },
+    "frontend": {
+        "dependencies": [
+            "backend"
+        ],
+        "source": [
+            "src/frontend/dist"
+        ],
+        "type": "assets",
+        "workspace": "frontend"
     },
     "internet_identity": {
-      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
-      "frontend": {},
-      "remote": {
-        "id": {
-          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
-        }
-      },
-      "type": "custom",
-      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+        "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+        "frontend": {},
+        "remote": {
+            "id": {
+            "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+            }
+        },
+        "type": "custom",
+        "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
     }
-  },
-  "defaults": {
+},
+"defaults": {
     "build": {
-      "args": "",
-      "packtool": ""
+        "args": "",
+        "packtool": ""
     }
-  },
-  "output_env_file": ".env",
-  "version": 1
+},
+"output_env_file": ".env",
+"version": 1
 }

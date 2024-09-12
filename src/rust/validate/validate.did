@@ -1,0 +1,40 @@
+type ValidateVpRequest = record {
+    vp_jwt : text;
+    effective_vc_subject : principal;
+    credential_spec : CredentialSpec;
+    issuer_origin : text;
+    issuer_canister_id : principal;
+};
+
+type CredentialSpec = record {
+    credential_type : text;
+    arguments : opt vec record { text; ArgumentValue };
+};
+
+type ArgumentValue = variant {
+    Int : int;
+    String : text;
+};
+
+type ContentError = variant {
+    NotAuthorized : text;
+};
+
+type IssuerData = record {
+    vc_url : text;
+    canister_id : principal;
+};
+
+type RpInit = record {
+    ic_root_key_der : vec nat8;
+    ii_vc_url : text;
+    ii_canister_id : principal;
+    issuers : vec IssuerData;
+};
+
+service : (opt RpInit) -> {
+    validate_ii_vp : (ValidateVpRequest) -> (variant { Ok; Err : ContentError });
+    get_issuers : () -> (vec record { text; principal }) query;
+    config : (RpInit) -> ();
+    set_default_config : () -> ();
+}
