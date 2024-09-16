@@ -5,9 +5,7 @@
     import { AuthClient } from '@dfinity/auth-client';
     import { requestVerifiablePresentation } from "@dfinity/verifiable-credentials/request-verifiable-presentation";
 
-    import Header from './views/layout/Header.vue';
-    import Footer from './views/layout/Footer.vue';
-    import Home from './views/Home.vue';
+
     // import { BlockID_backend } from 'declarations/BlockID_backend/index';
     import { validate } from '../../declarations/validate/index';
     const loading = ref(true);
@@ -15,6 +13,7 @@
     const userPrincipal = ref(null);
     const errorMessage = ref('');
     const jwt = ref('');
+    console.log('ENV:', import.meta.env);
     const validateJwt = async () => {
         console.log('Start verify...');
         try{
@@ -133,11 +132,25 @@
         }
     };
 
-    onMounted(checkAuth);
+    onMounted(() => {
+        checkAuth();
+    });
+
+
+    const drawer = ref(false);
+    const menuItems = [
+        { title: 'Blog', icon: 'mdi-post', to: '/blog' },
+        { title: 'Learn', icon: 'mdi-school', to: '/learn' },
+        { title: 'Support', icon: 'mdi-lifebuoy', to: '/support' },
+        { title: 'Ecosystem', icon: 'mdi-earth', to: '/ecosystem' },
+        { title: 'Team', icon: 'mdi-account-group', to: '/team' },
+        { title: 'Playground', icon: 'mdi-play-circle', to: '/playground' },
+    ]
 </script>
 
 <template>
-    <Suspense>
+    <router-view></router-view>
+    <!-- <Suspense>
         <main>
             <br/>
             <br/>
@@ -155,5 +168,5 @@
             <Home />
             <Footer />
         </main>
-    </Suspense>
+    </Suspense> -->
 </template>
