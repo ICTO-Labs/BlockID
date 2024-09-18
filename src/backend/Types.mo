@@ -45,12 +45,27 @@ module {
         description: Text;
         criterias: [CriteriaId];
     };
+    public type VerifyMethod = {
+        #VcFlow;
+        #Module;
+    };
 
     public type Validator = {
         id: ValidatorId;
         name: Text;
+        logo: Text;
         description: Text;
         groups: [GroupId];
+        verifyMethod: VerifyMethod;
+    };
+
+    public type ValidatorInfo = {
+        id: ValidatorId;
+        name: Text;
+        logo: Text;
+        description: Text;
+        verifyMethod: VerifyMethod;
+        totalScore: Nat;
     };
 
     public type WalletScore = {

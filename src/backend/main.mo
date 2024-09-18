@@ -24,6 +24,7 @@ actor BlockID {
     private stable var _criterias: [(Text, Types.Criteria)] = [];
     private var wallets = HashMap.HashMap<Types.WalletId, Types.Wallet>(0, Principal.equal, Principal.hash);
     private stable var _wallets: [(Types.WalletId, Types.Wallet)] = [];
+    private stable var _admins : [Text] = ["lekqg-fvb6g-4kubt-oqgzu-rd5r7-muoce-kppfz-aaem3-abfaj-cxq7a-dqe"];
 
     //********************** System function **********************//
     system func preupgrade() {
@@ -39,19 +40,28 @@ actor BlockID {
         wallets := HashMap.fromIter<Types.WalletId, Types.Wallet>(_wallets.vals(), 0, Principal.equal, Principal.hash);
     };
     //********************** System function **********************//
-
+    private func _isAdmin(p : Text) : (Bool) {
+        for (i in _admins.vals()) {
+            if (i == p) {
+                return true;
+            };
+        };
+        return false;
+    };
     //Add a new Validator
-    public func addValidator(validator: Types.Validator) : async () {
+    public shared ({caller}) func addValidator(validator: Types.Validator) : async () {
+        assert(_isAdmin(Principal.toText(caller)));
         validators.put(validator.id, validator);
     };
 
     //Add a new Group to a Validator
-    public func addGroupToValidator(group: {
+    public shared ({caller}) func addGroupToValidator(group: {
             validatorId: Types.ValidatorId; 
             groupId: Types.GroupId;
             groupName: Text;
             groupDescription: Text
         }) : async () {
+        assert(_isAdmin(Principal.toText(caller)));
         switch (validators.get(group.validatorId)) {
             case null { /* Validator not existed */ };
             case (?validator) {
@@ -62,16 +72,34 @@ actor BlockID {
         };
     };
 
+    //Remove group by group id and also remove from validators
+    public shared ({caller}) func removeGroup(groupId: Types.GroupId) : async () {
+        assert(_isAdmin(Principal.toText(caller)));
+        //Remove from validators
+        for (validator in validators.vals()) {
+            let updatedGroups = Array.filter(validator.groups, func (id: Types.GroupId) : Bool { id != groupId });
+            validators.put(validator.id, { validator with groups = updatedGroups });
+        };
+        //Remove from groups
+        let _ = groups.remove(groupId);
+    };
+    //Remove wallet by wallet id
+    public shared ({caller}) func removeWallet(walletId: Types.WalletId) : async () {
+        assert(_isAdmin(Principal.toText(caller)));
+        let _ = wallets.remove(walletId);
+    };
 
-    public func addGroup(group: Types.Group) : async () {
+    public shared ({caller}) func addGroup(group: Types.Group) : async () {
+        assert(_isAdmin(Principal.toText(caller)));
         groups.put(group.id, group);
     };
 
-    public func addCriteria(criteria: Types.Criteria) : async () {
+    public shared ({caller}) func addCriteria(criteria: Types.Criteria) : async () {
+        assert(_isAdmin(Principal.toText(caller)));
         criterias.put(criteria.id, criteria);
     };
 
-    public func addCriteriaToGroup(
+    public shared ({caller}) func addCriteriaToGroup(
         criteria: {
             groupId: Types.GroupId;
             criteriaId: Types.CriteriaId;
@@ -84,6 +112,7 @@ actor BlockID {
             autoVerify: Bool
         }
     ) : async () {
+        assert(_isAdmin(Principal.toText(caller)));
         switch (groups.get(criteria.groupId)) {
             case null { /* Group not existed */ };
             case (?group) {
@@ -177,7 +206,7 @@ actor BlockID {
         };
     };
 
-public shared(msg) func verifySpecificCriteria(walletId: Types.WalletId, criteriaId: Types.CriteriaId, groupId: Text, validatorId: Text) : async Result.Result<Nat, Text> {
+    public shared(msg) func verifySpecificCriteria(walletId: Types.WalletId, criteriaId: Types.CriteriaId, groupId: Text, validatorId: Text) : async Result.Result<Nat, Text> {
         switch (criterias.get(criteriaId)) {
             case null { #err("Criteria not found") };
             case (?criteria) {
@@ -265,11 +294,55 @@ public shared(msg) func verifySpecificCriteria(walletId: Types.WalletId, criteri
             };
         }
     };
-
-    //List validators
-    public query func getValidators() : async [(Types.ValidatorId, Types.Validator)] {
-        Iter.toArray(validators.entries())
+    //Count total score of criterial in validators
+    private func countTotalScore(validator: Types.Validator) : Nat {
+        var totalScore = 0;
+        for (groupId in validator.groups.vals()) {
+            switch (groups.get(groupId)) {
+                case null { /* Skip if group not found */ };
+                case (?group) {
+                    for (criteriaId in group.criterias.vals()) {
+                        switch (criterias.get(criteriaId)) {
+                            case null { /* Skip if criteria not found */ };
+                            case (?criteria) {
+                                totalScore += criteria.score;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        totalScore
     };
+    
+    //List validators
+    public query func getValidators() : async [(Types.ValidatorId, Types.ValidatorInfo)] {
+        //Count total score of criterial in validators
+        var validatorsWithScore: [(Types.ValidatorId, Types.ValidatorInfo)] = [];
+        for (validator in validators.vals()) {
+            var totalScore = countTotalScore(validator);
+            var validatorInfo : Types.ValidatorInfo = {
+                validator with
+                totalScore = totalScore;
+            };
+            validatorsWithScore := Array.append(validatorsWithScore, [(validator.id, validatorInfo)]);
+        };
+        return validatorsWithScore;
+    };
+    //Get validator by Id
+    public query func getValidatorById(validatorId: Types.ValidatorId) : async ?Types.ValidatorInfo {
+        switch (validators.get(validatorId)) {
+            case null { return null };
+            case (?validator) {
+                var validatorInfo : Types.ValidatorInfo = {
+                    validator with
+                    totalScore = countTotalScore(validator)
+                };
+                return ?validatorInfo;
+            };
+        };
+    };
+    
     //List groups
     public query func getGroups() : async [(Types.GroupId, Types.Group)] {
         Iter.toArray(groups.entries())
@@ -284,7 +357,8 @@ public shared(msg) func verifySpecificCriteria(walletId: Types.WalletId, criteri
     };
 
     //Update criteria
-    public shared func updateCriteria(criteriaId: Types.CriteriaId, params: Types.ProviderParams, expirationTime: Int, autoVerify: Bool) : async Result.Result<Bool, Text> {
+    public shared ({caller}) func updateCriteria(criteriaId: Types.CriteriaId, params: Types.ProviderParams, expirationTime: Int, autoVerify: Bool) : async Result.Result<Bool, Text> {
+        assert(_isAdmin(Principal.toText(caller)));
         switch (criterias.get(criteriaId)) {
             case null { #err("Criteria not existed"); };
             case (?criteria) {
@@ -300,7 +374,8 @@ public shared(msg) func verifySpecificCriteria(walletId: Types.WalletId, criteri
         };
     };
     //Remove criteria
-    public shared func removeCriteria(criteriaId: Types.CriteriaId) : async Result.Result<Bool, Text> {
+    public shared ({caller}) func removeCriteria(criteriaId: Types.CriteriaId) : async Result.Result<Bool, Text> {
+        assert(_isAdmin(Principal.toText(caller)));
         switch (criterias.get(criteriaId)) {
             case null { #err("Criteria not existed"); };
             case (?_) {
@@ -314,5 +389,18 @@ public shared(msg) func verifySpecificCriteria(walletId: Types.WalletId, criteri
         };
     };
 
-    // Other function updateCriteria, removeValidator, removeGroup, removeCriteria, removeWallet, etc.
+    //Utility function
+    public shared ({caller}) func addAdmin(admin: Text) : async Result.Result<Bool, Text> {
+        assert(_isAdmin(Principal.toText(caller)));
+        _admins := Array.append(_admins, [admin]);
+        #ok(true);
+    };
+    public shared ({caller}) func removeAdmin(admin: Text) : async Result.Result<Bool, Text> {
+        assert(_isAdmin(Principal.toText(caller)));
+        _admins := Array.filter(_admins, func (a: Text) : Bool { a != admin });
+        #ok(true);
+    };
+    public query func getAdmins() : async [Text] {
+        _admins
+    };
 };
