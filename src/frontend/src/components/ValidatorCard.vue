@@ -14,8 +14,6 @@
 
 <template>
     <v-card
-        subtitle="get verified"
-        :title="validator.title"
         class="overflow-hidden mx-auto "
         hover
         height="100%"
@@ -23,7 +21,7 @@
         <template v-slot:prepend>
             <v-avatar size="48">
                 <v-img
-                :alt="validator.title"
+                :alt="validator.name"
                 :src="validator.logo"
                 
                 ></v-img>
@@ -31,17 +29,21 @@
             
         </template>
         <template v-slot:title>
-            {{ validator.title }} 
+            {{ validator.name }} 
             <v-chip label size="small" color="warning" prepend-icon="mdi-account-cancel" variant="outlined">
                 <span class="text-primary1">Not verified</span>
             </v-chip>
         </template>
         <template v-slot:subtitle>
-            <v-chip-group>
-                <v-chip class="ma-0"  size="small" prepend-icon="mdi-star" color="warning">
-                {{ validator.score || 0 }} Points
+            <v-card-text class="py-1 px-0">
+                <v-chip class="ma-0 fw-bold" size="small" prepend-icon="mdi-star" color="warning">
+                {{ validator.totalScore || 0 }} Points
                 </v-chip>
-            </v-chip-group>
+                <v-chip class="ms-2 ma-0" color="success" size="small" variant="outlined"
+                    prepend-icon="mdi-check-decagram" v-if="validator?.verifyMethod?.VcFlow == null">
+                    VCFlow
+                </v-chip>
+            </v-card-text>
         </template>
         
         <v-card-text class="pt-4">

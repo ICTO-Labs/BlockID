@@ -1,9 +1,17 @@
 <script setup>
+    import { ref, watchEffect } from 'vue'
     import { useWalletStore } from '@/store/walletStore'
     import { storeToRefs } from 'pinia'
-
+    import { getWalletScore } from '@/services/backendService'
     const walletStore = useWalletStore()
     const { principalId, accountId, balance, isConnected, shortPrincipal } = storeToRefs(walletStore)
+    const walletScore = ref(10)
+    watchEffect(async () => {
+        if (isConnected.value) {
+            walletScore.value = await getWalletScore(principalId.value, '1')
+        }
+    })
+
 </script>
 <template>
     <!-- Wallet Information Section -->
@@ -11,12 +19,12 @@
         <v-col cols="12" md="4">
             <v-card color="primary" dark height="100%">
                 <template v-slot:title>
-                    <span class="font-weight-black">Granted Score</span>
+                    <span class="font-weight-black">Your Score</span>
                 </template>
                 <v-card-item>
                     <template v-slot:prepend>
                         <v-card-item>
-                            <div class="text-h2 mb-2 text-orange font-weight-bold">16</div>
+                            <div class="text-h2 mb-2 text-orange font-weight-bold">{{ walletScore }}</div>
                             <div class="text-subtitle-2">Higher than 90% of verified wallets</div>
                         </v-card-item>
                     </template>
