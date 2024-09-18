@@ -2,13 +2,15 @@ import { defineStore } from 'pinia';
 
 export const useProjectStore = defineStore('project', {
     state: () => ({
-        project : 'BlockID',
+        projectTitle : 'BlockID',
         desc : 'One BlockChain ID',
-        username : "admin",
         email: 'info@blockid.cc',
-        theme: 'light'
+        theme: 'light',
+        isDrawerOpen: true
     }),
     actions: {
-        // Action
+        toggleDrawer(){
+            this.isDrawerOpen = !this.isDrawerOpen
+        }
     },
 });

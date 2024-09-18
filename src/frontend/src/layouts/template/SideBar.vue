@@ -1,19 +1,23 @@
 <script setup>
-import { ref } from 'vue';
-import { useProjectStore } from '@/store';
-const projectStore = useProjectStore();
+    import { ref, watch } from 'vue';
+    import { useProjectStore } from '@/store';
+    import { storeToRefs } from 'pinia';
 
-const drawer = ref(true);
-const rail = ref(true);
-const username = ref(projectStore.username);
-const email = ref(projectStore.email);
+    const projectStore = useProjectStore();
+    const { isDrawerOpen } = storeToRefs(projectStore);
 
-const menus = ref([
-    { title: 'Verify', value: 1, prependIcon: 'mdi-star', link: '/'},
-    { title: 'Validators', value: 2, prependIcon: 'mdi-account-multiple', link: '/demo'},
-    { title: 'Gallery', value: 4, prependIcon: 'mdi-image-multiple', link: '/gallery'},
-    { title: 'Usage', value: 6, prependIcon: 'mdi-cloud-outline', link: '/usage'},
-]);
+    const drawer = ref(true);
+    const rail = ref(true);
+
+    watch(isDrawerOpen, (newValue)=>{
+        rail.value = !newValue
+    })
+    const menus = ref([
+        { title: 'Verify', value: 1, prependIcon: 'mdi-star', link: '/'},
+        { title: 'Validators', value: 2, prependIcon: 'mdi-account-multiple', link: '/demo'},
+        { title: 'Gallery', value: 4, prependIcon: 'mdi-image-multiple', link: '/gallery'},
+        { title: 'Usage', value: 6, prependIcon: 'mdi-cloud-outline', link: '/usage'},
+    ]);
 </script>
 <template>
     <div>
@@ -21,7 +25,8 @@ const menus = ref([
             class="pt-4"
             color="primary"
             model-value
-            rail
+            :rail="drawer"
+            v-model="isDrawerOpen"
         >
         <v-avatar color="grey-darken-3" size="42" class="d-block text-center mx-auto mb-9"><span class="text-h4">B</span></v-avatar>
         

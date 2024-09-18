@@ -3,8 +3,8 @@
     import { useProjectStore } from '@/store';
     import { useRouter } from 'vue-router';
     import { useTheme } from 'vuetify'
-    import { useDialogStore } from '@/store/dialogStore'
-    const dialogStore = useDialogStore()
+    import Dialog from '@/plugins/dialog'
+    import Notify from '@/plugins/notify'
     import { useWalletStore } from '@/store/walletStore'
     import { storeToRefs } from 'pinia'
     import authService from '@/services/authService'
@@ -17,12 +17,6 @@
     const router = useRouter();
 
     const projectStore = useProjectStore();
-    const items = [
-        { title: 'My Account', icon: 'mdi-account', to: '/account' },
-        { title: 'Notifications', icon: 'mdi-alert-circle', to: '/notifications' },
-        { title: 'Setting', icon: 'mdi-cog', to: '/setting' },
-        { title: 'Logout' , icon: 'mdi-logout', to: '/logout'},
-    ];
     // const theme = projectStore.theme;
     const goMain = () => {
         router.push('/');
@@ -31,27 +25,28 @@
         theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
     }
     const handleConnect = () => {
-        dialogStore.openDialog('connectWallet', {
-            maxWidth: 400
-        })
+        Dialog.connectWallet()
     }
 
-    const handleLogout = ()=>{
-        dialogStore.openDialog('confirm', {
+    const handleLogout = async ()=>{
+        const confirm = await Dialog.confirm({
             title: 'Warning',
             message: 'Are you sure you want to logout?',
             color: 'warning',
-            icon: 'mdi-alert',
-            onConfirm: () => {
-                console.log('Action confirmed')
-                walletStore.clearWalletInfo();//Logout and clear wallet info
-                dialogStore.closeDialog('confirm')
-            },
-            onCancel: () => {
-                console.log('Action canceled')
-                dialogStore.closeDialog('confirm')
-            }
+            icon: 'mdi-alert'
         })
+        if(confirm){
+            walletStore.clearWalletInfo();//Logout and clear wallet info
+            Dialog.close('confirm')
+            Notify.success('Logout successfully!')
+        }else{
+            Dialog.close('confirm')
+        }
+
+    }
+
+    const toggleDrawer = () => {
+        projectStore.toggleDrawer();
     }
 </script>
 <template>
@@ -61,10 +56,10 @@
         :elevation="2"
         >
         <template v-slot:prepend>
-            <v-app-bar-nav-icon></v-app-bar-nav-icon>
+            <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
         </template>
 
-        <v-app-bar-title @click="goMain()">{{projectStore.project}} <span class="text-subtitle-2 ml-1">{{projectStore.desc}}</span></v-app-bar-title>
+        <v-app-bar-title @click="goMain()">{{projectStore.projectTitle}} <span class="text-subtitle-2 ml-1">{{projectStore.desc}}</span></v-app-bar-title>
 
         <template v-slot:append>
             
