@@ -1,6 +1,18 @@
 import { useDialogStore } from '@/store/dialogStore';
 
 const Dialog = {
+    connectWallet() {
+        const dialogStore = useDialogStore();
+        return new Promise((resolve) => {
+            dialogStore.openDialog('connectWallet', {
+                maxWidth: 400,
+                onClose: () => {
+                    dialogStore.closeDialog('connectWallet');
+                    resolve();
+                }
+            });
+        });
+    },
     confirm(options) {
         const dialogStore = useDialogStore();
         return new Promise((resolve) => {
@@ -23,7 +35,37 @@ const Dialog = {
             });
         });
     },
-
+    showLoading(message) {
+        const dialogStore = useDialogStore();
+        return new Promise((resolve) => {
+            dialogStore.openDialog('loadingDialog', {
+                message: message || 'Loading...'    ,
+                persistent: true,
+                maxWidth: 400,
+                onClose: () => {
+                    dialogStore.closeDialog('loadingDialog');
+                    resolve();
+                }
+            });
+        });
+    },
+    closeLoading() {
+        const dialogStore = useDialogStore();
+        dialogStore.closeDialog('loadingDialog');
+    },
+    showVerify(validatorId) {
+        const dialogStore = useDialogStore();
+        return new Promise((resolve) => {
+            dialogStore.openDialog('verifyDialog', {
+                validatorId,
+                maxWidth: 700,
+                onClose: () => {
+                    dialogStore.closeDialog('verifyDialog');
+                    resolve();
+                }
+            });
+        });
+    },
     alert(options) {
         const dialogStore = useDialogStore();
         return new Promise((resolve) => {

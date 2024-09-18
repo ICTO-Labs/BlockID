@@ -154,23 +154,4 @@
 
 <template>
     <router-view></router-view>
-    <!-- <Suspense>
-        <main>
-            <br/>
-            <br/>
-            <br/>
-            <br/>
-            <button class="btn btn-double-text" @click="handleLogin" :disabled="isAuthenticated">
-                    {{ isAuthenticated ? 'Connected' : 'Connect' }}
-            </button>
-            <button class="btn btn-double-text" @click="logout" :disabled="!isAuthenticated">Logout</button>
-            <button class="btn btn-double-text" @click="verify" :disabled="!isAuthenticated">Start Verification</button>
-            <button class="btn btn-double-text" @click="validateJwt" :disabled="!isAuthenticated">Verify</button>
-
-            <input type="text" v-model="userPrincipal" />
-            <Header />
-            <Home />
-            <Footer />
-        </main>
-    </Suspense> -->
 </template>

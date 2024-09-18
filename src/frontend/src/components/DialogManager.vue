@@ -4,6 +4,8 @@
     import ConnectWallet from './Wallet/ConnectWallet.vue'
     import ConfirmDialog from './ConfirmDialog.vue'
     import AlertDialog from './AlertDialog.vue'
+    import VerifyDialog from '@/components/Validators/VerifyDialog.vue'
+    import LoadingDialog from '@/components/LoadingDialog.vue'
     const dialogStore = useDialogStore()
     
     const dialogs = computed(() => dialogStore.dialogs)
@@ -11,8 +13,10 @@
     const getDialogComponent = (name) => {
         const components = {
             connectWallet: ConnectWallet,
-            alert: AlertDialog  ,
+            AlertDialog: AlertDialog,
             confirm: ConfirmDialog,
+            verifyDialog: VerifyDialog,
+            loadingDialog: LoadingDialog,
         // Add more dialog components as needed
         }
         return components[name] || null
@@ -30,7 +34,7 @@
             :key="name"
             v-model="dialog.isOpen"
             :max-width="dialog.props.maxWidth || 400"
-            :persistent="dialog.props.isConfirm ? true : false"
+            :persistent="dialog.props.persistent || false"
             @confirm="dialog.props.onConfirm"
             @cancel="dialog.props.onCancel"
         >

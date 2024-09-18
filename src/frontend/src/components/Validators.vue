@@ -18,26 +18,12 @@
             <v-col
             v-for="validator in validators"
             :key="validator.title"
-            cols="3"
+            cols="12"
+            sm="6"
+            md="4"
+            lg="3"
             >
-            <ValidatorCard :validator="validator" :to="`/validator/${validator.id}`"/>
-            <!-- <v-item v-slot="{ isSelected, selectedClass, toggle }">
-                <v-card
-                :class="['align-center', selectedClass]"
-                dark
-                :title="`Photo ${n}`"
-                :subtitle="isSelected? `Content ${n} is selected.` : `Subtitle for Content ${n}`"
-                @click="toggle"
-                >
-
-                <v-img src="https://picsum.photos/512/128?random" height="128" cover></v-img>
-
-                <v-card-text>
-                During my last trip to South America, I spent 2 weeks traveling through Patagonia in Chile.
-                </v-card-text>
-
-                </v-card>
-            </v-item> -->
+            <ValidatorCard :validator="validator" />
             </v-col>
         </v-row>
     </v-item-group>
