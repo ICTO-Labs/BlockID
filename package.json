@@ -16,6 +16,8 @@
         "src/frontend"
     ],
     "dependencies": {
-        "@dfinity/ledger-icp": "^2.4.0"
+        "@dfinity/ledger-icp": "^2.4.0",
+        "@dfinity/nns": "^6.0.0",
+        "remove": "^0.1.5"
     }
 }

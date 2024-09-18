@@ -4,6 +4,10 @@
     import { Principal } from '@dfinity/principal';
     import { AuthClient } from '@dfinity/auth-client';
     import { requestVerifiablePresentation } from "@dfinity/verifiable-credentials/request-verifiable-presentation";
+    import { useWalletStore } from '@/store/walletStore';
+    //load data from localstorage when refresh
+    const walletStore = useWalletStore();
+    walletStore.loadFromLocalStorage();
 
 
     // import { BlockID_backend } from 'declarations/BlockID_backend/index';

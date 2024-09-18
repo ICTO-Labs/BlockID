@@ -6,12 +6,12 @@ const BlockIDV1 = {
         'carousel-control-size': 10
     },
     colors: {
-        primary: '#1e88e5',
-        secondary: '#5e35b1',
+        // primary: '#1e88e5',
+        // secondary: '#5e35b1',
         info: '#03c9d7',
-        success: '#00c853',
-        accent: '#FFAB91',
-        warning: '#ffc107',
+        // success: '#00c853',
+        // accent: '#FFAB91',
+        // warning: '#ffc107',
         error: '#f44336',
         lightprimary: '#eef2f6',
         lightsecondary: '#ede7f6',

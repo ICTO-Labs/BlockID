@@ -6,12 +6,12 @@ export const useDialogStore = defineStore('dialog', {
     }),
     actions: {
         openDialog(name, props = {}) {
-        this.dialogs[name] = { isOpen: true, props }
+            this.dialogs[name] = { isOpen: true, props }
         },
         closeDialog(name) {
-        if (this.dialogs[name]) {
-            this.dialogs[name].isOpen = false
-        }
+            if (this.dialogs[name]) {
+                this.dialogs[name].isOpen = false
+            }
         }
     }
 })

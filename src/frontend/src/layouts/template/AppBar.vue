@@ -5,6 +5,12 @@
     import { useTheme } from 'vuetify'
     import { useDialogStore } from '@/store/dialogStore'
     const dialogStore = useDialogStore()
+    import { useWalletStore } from '@/store/walletStore'
+    import { storeToRefs } from 'pinia'
+    import authService from '@/services/authService'
+
+    const walletStore = useWalletStore()
+    const { principalId, accountId, balance, isConnected, shortPrincipal } = storeToRefs(walletStore)
 
     const theme = useTheme()
 
@@ -12,32 +18,38 @@
 
     const projectStore = useProjectStore();
     const items = [
-        { title: 'Profile' },
-        { title: 'Alert' },
-        { title: 'Setting' },
-        { title: 'Logout' },
+        { title: 'My Account', icon: 'mdi-account', to: '/account' },
+        { title: 'Notifications', icon: 'mdi-alert-circle', to: '/notifications' },
+        { title: 'Setting', icon: 'mdi-cog', to: '/setting' },
+        { title: 'Logout' , icon: 'mdi-logout', to: '/logout'},
     ];
     // const theme = projectStore.theme;
-    const onClick = () => {
-        projectStore.theme = projectStore.theme === 'light' ? 'dark' : 'light';
-    };
     const goMain = () => {
         router.push('/');
     };
     function toggleTheme () {
         theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
     }
-    const openLoginDialog = () => {
-        dialogStore.openDialog('login', {
+    const handleConnect = () => {
+        dialogStore.openDialog('connectWallet', {
             maxWidth: 400
         })
     }
 
-    const openConfirmDialog = () => {
-        dialogStore.openDialog('walletConnect', {
+    const handleLogout = ()=>{
+        dialogStore.openDialog('confirm', {
+            title: 'Warning',
+            message: 'Are you sure you want to logout?',
+            color: 'warning',
+            icon: 'mdi-alert',
             onConfirm: () => {
                 console.log('Action confirmed')
-                dialogStore.closeDialog('walletConnect')
+                walletStore.clearWalletInfo();//Logout and clear wallet info
+                dialogStore.closeDialog('confirm')
+            },
+            onCancel: () => {
+                console.log('Action canceled')
+                dialogStore.closeDialog('confirm')
             }
         })
     }
@@ -62,7 +74,7 @@
                 <v-tooltip
                 activator="parent"
                 location="bottom"
-                >Switch to {{ theme.global.name.value === 'light' ? 'Dark' : 'Light' }} theme</v-tooltip>
+                >Switch to {{ theme.global.name.value === 'light' ? 'Dark' : 'Light' }} mode</v-tooltip>
             </v-btn>
 
             <v-divider
@@ -70,42 +82,44 @@
                 vertical
             ></v-divider>
 
-            <v-menu>
+            <v-menu v-if="!isConnected">
                 <template v-slot:activator="{ props }">
-                    <v-btn variant='flat' @click="openConfirmDialog">
+                    <v-btn variant='flat' @click="handleConnect">
                         <v-icon>mdi-wallet</v-icon>
                         Connect
                         <v-tooltip activator="parent" location="bottom" >Connect your wallet</v-tooltip>
                     </v-btn>
-
                 </template>
-
-                <v-list>
-                    <v-list-item
-                    v-for="(item, index) in items"
-                    :key="index"
-                    >
-                    <v-list-item-title>{{ item.title }}</v-list-item-title>
-                    </v-list-item>
-                </v-list>
             </v-menu>
 
             <!-- Setting -->
-            <v-menu>
+            <v-menu v-else>
                 <template v-slot:activator="{ props }">
-                    <v-btn dark icon
-                    v-bind="props"
-                    >
-                    <v-icon>mdi-cog</v-icon>
+                    <v-btn dark variant='flat' v-bind="props" class="text-none">
+                        <v-icon>mdi-wallet</v-icon>
+                        {{ shortPrincipal }}
                     </v-btn>
                 </template>
 
-                <v-list>
-                    <v-list-item
-                    v-for="(item, index) in items"
-                    :key="index"
-                    >
-                    <v-list-item-title>{{ item.title }}</v-list-item-title>
+                <v-list density="compact">
+                    <v-list-item to="/account">
+                        <template v-slot:prepend>
+                            <v-icon icon="mdi-account"></v-icon>
+                        </template>
+                        <v-list-item-title>My Account</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item to="/setting">
+                        <template v-slot:prepend>
+                            <v-icon icon="mdi-cog"></v-icon>
+                        </template>
+                        <v-list-item-title>Setting</v-list-item-title>
+                    </v-list-item>
+                    <v-divider></v-divider>
+                    <v-list-item @click="handleLogout" href="javascript:void(0)">
+                        <template v-slot:prepend>
+                            <v-icon icon="mdi-logout"></v-icon>
+                        </template>
+                        <v-list-item-title>Logout</v-list-item-title>
                     </v-list-item>
                 </v-list>
             </v-menu>

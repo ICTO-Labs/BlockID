@@ -1,5 +1,9 @@
 <script setup>
+    import { useWalletStore } from '@/store/walletStore'
+    import { storeToRefs } from 'pinia'
 
+    const walletStore = useWalletStore()
+    const { principalId, accountId, balance, isConnected, shortPrincipal } = storeToRefs(walletStore)
 </script>
 <template>
     <!-- Wallet Information Section -->
@@ -32,16 +36,28 @@
                 <v-card-text>
                 <v-list>
                     <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Wallet Address</v-list-item-title>
-                            <v-list-item-subtitle>lekqg-fvb6g...cxq7a-dqe</v-list-item-subtitle>
-                        </v-list-item-content>
+                        <v-row>
+                            <v-col>
+                                <v-list-item>
+                                    <v-list-item-title>Principal</v-list-item-title>
+                                    <v-list-item-subtitle>{{ principalId || '---' }}</v-list-item-subtitle>
+                                </v-list-item>
+                            </v-col>
+                            
+                            <v-col>
+                                <v-list-item>
+                                    <v-list-item-title>Account Id</v-list-item-title>
+                                    <v-list-item-subtitle>{{ accountId || '---' }}</v-list-item-subtitle>
+                                </v-list-item>
+                            </v-col>
+
+                        </v-row>
                     </v-list-item>
                     <v-list-item>
-                        <v-list-item-content>
+                        <v-list-item>
                             <v-list-item-title>Balance</v-list-item-title>
-                            <v-list-item-subtitle>300 ICP</v-list-item-subtitle>
-                        </v-list-item-content>
+                            <v-list-item-subtitle>{{ balance || '---' }} ICP</v-list-item-subtitle>
+                        </v-list-item>
                     </v-list-item>
                 </v-list>
                 </v-card-text>

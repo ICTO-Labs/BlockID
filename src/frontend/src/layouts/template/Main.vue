@@ -8,7 +8,7 @@
     import Contents from './Content'
     import Footer from './Footer'
     import DialogManager from '@/components/DialogManager.vue'
-
+    import SnackBar from '@/components/SnackBar.vue'
     import { useProjectStore } from '@/store';
     const projectStore = useProjectStore();
 
@@ -29,5 +29,6 @@
             <Footer />
         </v-main>
         <DialogManager />
+        <SnackBar />
     </v-app>
 </template>

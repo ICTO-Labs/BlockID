@@ -38,7 +38,7 @@ const props = defineProps({
             <v-btn
                 append-icon="mdi-chevron-right"
                 color="primary"
-                text="Start Verification"
+                text="Verify"
                 block
                 variant="flat"
             ></v-btn>
