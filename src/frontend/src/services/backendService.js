@@ -72,3 +72,30 @@ export const getWalletScore = async (walletId, criteriaId) => {
         return null
     }
 };
+
+export const createValidator = async (validator) => {
+    try {
+        return await Backend.addValidator(validator);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
+export const createGroup = async (group) => {
+    try {
+        return await Backend.addGroupToValidator(group);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
+export const createCriteria = async (criteria) => {
+    try {
+        return await Backend.addCriteriaToGroup(criteria);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};

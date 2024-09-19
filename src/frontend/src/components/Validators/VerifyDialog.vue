@@ -6,6 +6,7 @@
     import { storeToRefs } from 'pinia';
     import Notify from '@/plugins/notify';
     import Dialog from '@/plugins/dialog';
+    import VcFlow from '@/components/icons/VcFlow.vue';
     const props = defineProps({
         validatorId: {
             type: String,
@@ -75,7 +76,7 @@
 
 <template>
     <v-card v-if="isLoading">
-        <v-skeleton-loader class="mx-auto" elevation="12" max-width="400"
+        <v-skeleton-loader class="mx-auto" elevation="12" max-width="600"
             type="table-heading, list-item-two-line, image, table-tfoot"></v-skeleton-loader>
     </v-card>
     <v-card v-else>
@@ -99,10 +100,7 @@
                 <v-chip class="ma-0" color="warning" size="small" prepend-icon="mdi-star">
                     {{ validator.totalScore || 0 }} Points
                 </v-chip>
-                <v-chip class="ms-2 ma-0" color="success" size="small" variant="outlined"
-                    prepend-icon="mdi-check-decagram" v-if="validator?.verifyMethod?.VcFlow == null">
-                    VCFlow
-                </v-chip>
+                <VcFlow :verifyMethod="validator.verifyMethod" />
                 <v-chip class="ms-2 ma-0" size="small" prepend-icon="mdi-account-multiple-check">
                     {{ validator.wallets || 0 }} Verified wallets
                 </v-chip>

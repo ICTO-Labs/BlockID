@@ -16,7 +16,7 @@
         { title: 'Verify', value: 1, prependIcon: 'mdi-star', link: '/'},
         { title: 'Validators', value: 2, prependIcon: 'mdi-account-multiple', link: '/demo'},
         { title: 'Gallery', value: 4, prependIcon: 'mdi-image-multiple', link: '/gallery'},
-        { title: 'Usage', value: 6, prependIcon: 'mdi-cloud-outline', link: '/usage'},
+        { title: 'Manage', value: 6, prependIcon: 'mdi-cog', link: '/manage'},
     ]);
 </script>
 <template>

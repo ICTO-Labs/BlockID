@@ -16,10 +16,17 @@
 <template>
     <!-- Wallet Information Section -->
     <v-row class="mb-6">
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="5">
             <v-card color="primary" dark height="100%">
                 <template v-slot:title>
                     <span class="font-weight-black">Your Score</span>
+                    <v-btn icon="mdi-refresh" size="small" variant="text" @click="refreshScore">
+                        <v-icon>mdi-refresh</v-icon>
+                        <v-tooltip activator="parent" location="top">Refresh</v-tooltip>
+                    </v-btn>
+                </template>
+                <template v-slot:subtitle>
+                    Normal, some applications may require at least 15 points to allow access
                 </template>
                 <v-card-item>
                     <template v-slot:prepend>
@@ -38,7 +45,7 @@
                 </v-card-item>
             </v-card>
         </v-col>
-        <v-col cols="12" md="8">
+        <v-col cols="12" md="7">
             <v-card height="100%">
                 <v-card-title>Wallet Information</v-card-title>
                 <v-card-text>

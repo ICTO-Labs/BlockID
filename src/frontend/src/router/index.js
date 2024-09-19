@@ -20,6 +20,11 @@ const routes = [
                 component: () => import('@/views/ValidatorDetail')
             },
             {
+                path: '/manage',
+                name: 'Manage',
+                component: () => import('@/views/Manage')
+            },
+            {
                 path: '/:pathMatch(.*)*', name: 'Error404',
                 component: () => import('@/views/Error404')
             }

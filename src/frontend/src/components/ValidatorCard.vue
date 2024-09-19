@@ -1,6 +1,6 @@
 <script setup>
     import Dialog from '@/plugins/dialog';
-
+    import VcFlow from '@/components/icons/VcFlow.vue';
     const props = defineProps({
         validator: {
             type: Object,
@@ -39,10 +39,7 @@
                 <v-chip class="ma-0 fw-bold" size="small" prepend-icon="mdi-star" color="warning">
                 {{ validator.totalScore || 0 }} Points
                 </v-chip>
-                <v-chip class="ms-2 ma-0" color="success" size="small" variant="outlined"
-                    prepend-icon="mdi-check-decagram" v-if="validator?.verifyMethod?.VcFlow == null">
-                    VCFlow
-                </v-chip>
+                <VcFlow :verifyMethod="validator.verifyMethod" />
             </v-card-text>
         </template>
         
