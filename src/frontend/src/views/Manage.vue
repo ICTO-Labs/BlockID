@@ -72,7 +72,8 @@
     });
 
     const fetchData = async () => {
-        // validators.value = await getValidators();
+        applications.value = await getApplications();
+        validators.value = await getValidators();
         allGroups.value = await getGroups();
         criterias.value = await getCriterias();
     };

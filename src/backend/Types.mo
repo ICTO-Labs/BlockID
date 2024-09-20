@@ -3,8 +3,8 @@ import Nat "mo:base/Nat";
 module {
     public type WalletId = Principal;
     public type ValidatorId = Text;
-    public type GroupId = Text;
     public type CriteriaId = Text;
+    public type ApplicationId = Text;
 
     public type ComparisonType = {
         #GreaterThan;
@@ -12,7 +12,7 @@ module {
         #GreaterThanOrEqual;
         #LessThanOrEqual;
         #Equal;
-        #Between;  // New comparison type for range
+        #Between;
     };
 
     public type VerificationResult = {
@@ -24,8 +24,16 @@ module {
         minValue: Int;
         maxValue: ?Int;
         comparisonType: ComparisonType;
-        canisterId: ?Text;//Interact with canisterId
+        canisterId: ?Text;
         additionalParams: ?[(Text, Text)];
+        issuerInfo: ?{
+            issuerOrigin: Text;
+            issuerCanisterId: Text;
+            credentialSpec: {
+                credentialType: Text;
+                arguments: [Text];
+            };
+        }
     };
 
     public type Criteria = {
@@ -39,39 +47,39 @@ module {
         autoVerify: Bool;
     };
 
-    public type Group = {
-        id: GroupId;
-        name: Text;
-        description: Text;
-        criterias: [CriteriaId];
-    };
     public type VerifyMethod = {
         #VcFlow;
         #Module;
     };
-
-    public type Validator = {
-        id: ValidatorId;
+    public type CreateValidator = {
+        applicationId: ApplicationId;
         name: Text;
         logo: Text;
         description: Text;
-        groups: [GroupId];
         verifyMethod: VerifyMethod;
     };
-
-    public type ValidatorInfo = {
+    public type Validator = {
         id: ValidatorId;
+        applicationId: ApplicationId;
+        name: Text;
+        logo: Text;
+        description: Text;
+        criterias: [Criteria];
+        verifyMethod: VerifyMethod;
+        owner: Principal;
+        totalScore: Nat;//Will be calculated by the module
+    };
+
+    public type UpdateValidator = {
         name: Text;
         logo: Text;
         description: Text;
         verifyMethod: VerifyMethod;
-        totalScore: Nat;
     };
 
     public type WalletScore = {
+        applicationId: ApplicationId;
         validatorId: ValidatorId;
-        groupId: GroupId;
-        criteriaId: CriteriaId;
         score: Nat;
         verified: Bool;
         verificationTime: Int;
@@ -80,12 +88,22 @@ module {
 
     public type Wallet = {
         id: WalletId;
+        applicationId: ApplicationId;//Separate the wallet from the application
         scores: [WalletScore];
     };
 
     public type Provider = {
-        walletId: WalletId;
-        params: ProviderParams;
+        id: Text;
+        name: Text;
+        description: Text;
+        moduleId: Text;
     };
 
+    public type Application = {
+        id: ApplicationId;
+        name: Text;
+        description: Text;
+        owner: Principal;
+        validators: [ValidatorId];
+    };
 }

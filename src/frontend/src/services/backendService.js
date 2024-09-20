@@ -1,5 +1,6 @@
 import { backend as Backend} from "@/../../declarations/backend";
 import { Principal } from "@dfinity/principal";
+import { config } from "@/config";
 export const getWallets = async () => {
     try {
         return await Backend.getWallets()
@@ -9,27 +10,9 @@ export const getWallets = async () => {
     }
 };
 
-export const getGroups = async () => {
+export const getValidators = async (applicationId=config.APPLICATION_ID) => {
     try {
-        return await Backend.getGroups()
-    } catch (error) {
-        console.error(error)
-        return []
-    }
-};
-
-export const getCriterias = async () => {
-    try {
-        return await Backend.getCriterias()
-    } catch (error) {
-        console.error(error)
-        return []
-    }
-};
-
-export const getValidators = async () => {
-    try {
-        return await Backend.getValidators()
+        return await Backend.getValidators(applicationId)
     } catch (error) {
         console.error(error)
         return []
@@ -45,19 +28,9 @@ export const getWallet = async (walletId) => {
     }
 };  
 
-export const getGroup = async (groupId) => {
+export const getValidator = async (validatorId) => {
     try {
-        return await Backend.getGroup(groupId)
-    } catch (error) {
-        console.error(error)
-        return null
-    }
-};
-
-
-export const getValidatorById = async (validatorId) => {
-    try {
-        return await Backend.getValidatorById(validatorId)
+        return await Backend.getValidator(validatorId)
     } catch (error) {
         console.error(error)
         return null
@@ -73,27 +46,27 @@ export const getWalletScore = async (walletId, criteriaId) => {
     }
 };
 
-export const createValidator = async (validator) => {
+
+export const createApplication = async (application) => {
     try {
-        return await Backend.addValidator(validator);
+        return await Backend.createApplication(application);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+export const createValidator = async (applicationId, validator) => {
+    try {
+        return await Backend.createValidator(applicationId, validator);
     } catch (error) {
         console.error(error);
         return null;
     }
 };
 
-export const createGroup = async (group) => {
+export const createCriteria = async (validatorId, criteria) => {
     try {
-        return await Backend.addGroupToValidator(group);
-    } catch (error) {
-        console.error(error);
-        return null;
-    }
-};
-
-export const createCriteria = async (criteria) => {
-    try {
-        return await Backend.addCriteriaToGroup(criteria);
+        return await Backend.createCriteria(validatorId, criteria);
     } catch (error) {
         console.error(error);
         return null;

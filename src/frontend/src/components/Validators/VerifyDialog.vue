@@ -2,7 +2,7 @@
     import { ref, onMounted, watchEffect } from 'vue';
     import VerifyService from '@/services/verifyService';
     import { useWalletStore } from '@/store/walletStore';
-    import { getValidatorById } from '@/services/backendService';
+    import { getValidator } from '@/services/backendService';
     import { storeToRefs } from 'pinia';
     import Notify from '@/plugins/notify';
     import Dialog from '@/plugins/dialog';
@@ -23,14 +23,18 @@
     })
     const validator = ref(null);
 
-    const startVerification = async () => {
+    const startVCVerification = async (criteria) => {
         if(!isConnected.value){
             Dialog.connectWallet()
             return
         }
+        if(!('VcFlow' in validator.value.verifyMethod)){
+            Notify.error('Sorry, '+validator.value.name+' does not support VC Flow')
+            return
+        }
         const confirm = await Dialog.confirm({
                 title: 'Confirmation',
-                message: 'Are you sure you want to start verification with DecideAI?',
+                message: 'Are you sure you want to start verification with '+validator.value.name+' criterias?',
                 color: 'warning',
                 icon: 'mdi-alert'
         })
@@ -65,9 +69,9 @@
     }
     watchEffect(()=>{
         if(props.validatorId){
-            getValidatorById(props.validatorId).then((response) => {
+            getValidator(props.validatorId).then((response) => {
                 console.log('validator:', response)
-                validator.value = response?.[0]
+                validator.value = 'ok' in response ? response.ok : null;
                 isLoading.value = false
             })
         }
@@ -97,7 +101,7 @@
         </template>
         <template v-slot:subtitle>
             <v-card-text class="py-1 px-0">
-                <v-chip class="ma-0" color="warning" size="small" prepend-icon="mdi-star">
+                <v-chip class="font-weight-bold" color="warning" size="small" prepend-icon="mdi-star">
                     {{ validator.totalScore || 0 }} Points
                 </v-chip>
                 <VcFlow :verifyMethod="validator.verifyMethod" />
@@ -110,30 +114,29 @@
             <p>{{ validator.description }}</p>
         </v-card-text>
         <v-card-text>
-            <v-timeline side="end" density="compact">
-                <v-timeline-item class="mb-4" dot-color="grey" size="small" color="primary">
-                    <div class="d-flex justify-space-between flex-grow-1">
-                        <div>
-                            Ensure you have verified your unique personhood via <a href="https://id.decideai.xyz"
-                                target="_blank">the DecideAI website</a> <v-icon>mdi-open-in-new</v-icon> <span
-                                color="primary" variant="text">before</span> you proceed.
-                        </div>
-                    </div>
-                </v-timeline-item>
-
-                <v-timeline-item class="mb-4" dot-color="grey" size="small" color="primary">
-                    Claim your score on BlockID when connected to the DecideAI
+            <v-timeline side="end" density="compact" width="100%">
+                <v-timeline-item class="mb-4" width="100%" dot-color="primary" size="small" color="primary" v-for="criteria in validator.criterias" :key="criteria.id">
+                    <v-card width="100%">
+                        <template v-slot:title>
+                            <div class="text-subtitle-1 font-weight-bold">{{ criteria.name }}</div>
+                        </template>
+                        <template v-slot:append>
+                            <v-chip color="warning" size="small" prepend-icon="mdi-star" class="font-weight-bold">
+                                {{ criteria.score }}
+                            </v-chip>
+                        </template>
+                        <v-card-text class="bg-white text--primary">
+                            <div>
+                                {{ criteria.description }}
+                            </div>
+                            <div class="mt-2" v-if="criteria.score > 0 && 'VcFlow' in validator.verifyMethod">
+                                <v-btn color="warning" size="small" @click="startVCVerification(criteria)">Verify criteria</v-btn>
+                            </div>
+                        </v-card-text>
+                    </v-card>
                 </v-timeline-item>
             </v-timeline>
         </v-card-text>
-        <v-expansion-panels>
-            <v-expansion-panel>
-                <v-expansion-panel-title>Proof of Unique Person</v-expansion-panel-title>
-                <v-expansion-panel-text class="fs-11">
-                    Provide the "Unique Person" verifiable credential
-                </v-expansion-panel-text>
-            </v-expansion-panel>
-        </v-expansion-panels>
         
         <v-divider></v-divider>
         <v-card-actions>
