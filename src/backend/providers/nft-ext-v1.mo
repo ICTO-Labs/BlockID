@@ -8,7 +8,7 @@ module {
     // Verify the criteria of the NFT holding validator, by EXT standard v1 (implemented by Toniqlab - Entrepot)
     public func verify(walletId: Types.WalletId, params: Types.ProviderParams): async Nat {
         var nftCount = 0;
-        let _canisterId = Option.get(params.canisterId, "_");
+        let _canisterId = "_";//Option.get(params.providerParams.canisterId, "_");
         if (_canisterId == "_") {
             return 0;
         };

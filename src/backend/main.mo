@@ -73,6 +73,43 @@ actor BlockID {
         };
     };
 
+    private func _getProvider(providerId: Text) : ?Types.Provider {
+        switch (providers.get(providerId)) {
+            case null { null };
+            case (?template) { ?template };
+        };
+    };
+
+    //Create custom provider template
+    public shared(msg) func createProvider(provider: Types.Provider) : async Result.Result<(), Text> {
+        assert(_isAdmin(Principal.toText(msg.caller)));//Only admin can create provider template
+        switch (providers.get(provider.id)) {
+            case null {
+                providers.put(provider.id, { provider with owner = ?msg.caller });
+                #ok(())
+            };
+            case (?_) { #err("Provider ID already exists") };
+        };
+    };
+
+    public shared(msg) func updateProvider(providerId: Text, updatedProvider: Types.Provider) : async Result.Result<(), Text> {
+        assert(_isAdmin(Principal.toText(msg.caller)));//Only admin can update provider template
+        switch (providers.get(providerId)) {
+            case null { #err("Provider not found") };
+            case (?_provider) {
+                if (not _isAdmin(Principal.toText(msg.caller))) {
+                    return #err("Not authorized");
+                };
+                providers.put(providerId, updatedProvider);
+                #ok(())
+            };
+        }
+    };
+
+    public query func getProviders() : async [(Text, Types.Provider)] {
+        Iter.toArray(providers.entries())
+    };
+
     //Count total score from all criterias by Validator
     private func _updateTotalValidatorScore(validatorId: Types.ValidatorId) : () {
         switch (validators.get(validatorId)) {
@@ -87,15 +124,22 @@ actor BlockID {
         };
     };
 
-    public shared(msg) func createCriteria(validatorId: Types.ValidatorId, criteria: Types.Criteria) : async Result.Result<(), Text> {
+    public shared(msg) func createCriteria(validatorId: Types.ValidatorId, providerId: Text, criteria: Types.Criteria) : async Result.Result<(), Text> {
         switch (validators.get(validatorId)) {
             case null { #err("Validator not found") };
             case (?validator) {
                 if (validator.owner != msg.caller and not _isAdmin(Principal.toText(msg.caller))) {
                     return #err("Not authorized");
                 };
-                let _criteriaId = _generateId("criteria");
-                let _newCriteria: Types.Criteria = { criteria with id = _criteriaId };
+                let provider = switch (providers.get(providerId)) {
+                    case (?t) t;
+                    case null return #err("Provider not found")
+                };
+                let _newCriteria: Types.Criteria = { 
+                    criteria with 
+                    id = _generateId("criteria");
+                    providerId = ?providerId;
+                };
                 // criterias.put(_newCriteria.id, _newCriteria);
                 let updatedCriterias: [Types.Criteria] = Array.append(validator.criterias, [_newCriteria]);
                 validators.put(validatorId, { 
@@ -158,7 +202,13 @@ actor BlockID {
                 if (validator.owner != msg.caller and not _isAdmin(Principal.toText(msg.caller))) {
                     return #err("Not authorized");
                 };
-                validators.put(validatorId, { validator with updatedValidator });
+                validators.put(validatorId, { 
+                    validator with 
+                    applicationId = updatedValidator.applicationId;
+                    name = updatedValidator.name;
+                    logo = updatedValidator.logo;
+                    description = updatedValidator.description;
+                });
                 #ok(())
             };
         }
@@ -179,21 +229,44 @@ actor BlockID {
         }
     };
 
+    //Remove application
+    public shared(msg) func removeApplication(applicationId: Text) : async Result.Result<(), Text> {
+        switch (applications.get(applicationId)) {
+            case null { #err("Application not found") };
+            case (?app) {
+                if (app.owner != msg.caller and not _isAdmin(Principal.toText(msg.caller))) {
+                    return #err("Not authorized");
+                };
+                applications.delete(applicationId);
+                //Remove all validators of this application
+                for (validator in app.validators.vals()) {
+                    validators.delete(validator);
+                };
+                #ok(())
+            };
+        };
+    };
+
     public shared(msg) func verifyWallet(applicationId: Text, validatorId: Types.ValidatorId, walletId: Types.WalletId) : async Result.Result<Nat, Text> {
         var totalScore = 0;
         switch (applications.get(applicationId)) {
             case null { return #err("Application not found") };
-            case (?app) {
+            case (?_) {
                 switch (validators.get(validatorId)) {
                     case null { return #err("Validator not found") };
                     case (?validator) {
                         var newScore : ?Types.WalletScore = null;
                         let now = Time.now();
-
                         for (criteria in validator.criterias.vals()) {
-                            let result = await Provider.verifyCriteria(walletId, criteria);
-                            if (result.isValid) {
-                                totalScore += result.score;
+                            if(criteria.isVC == false){//Only verify non-VC criterias
+                                let provider = switch (providers.get(Option.get(criteria.providerId, ""))) {
+                                    case (?t) t;
+                                    case null return #err("Provider not found")
+                                };
+                                let result = await Provider.verifyCriteria(walletId, criteria, provider);
+                                if (result.isValid) {
+                                    totalScore += result.score;
+                                };
                             };
                         };
 
@@ -238,7 +311,7 @@ actor BlockID {
         #ok(totalScore)
     };
 
-    public query func getCurrentWalletScore(walletId: Types.WalletId, applicationId: Text, validatorId: Types.ValidatorId) : async Nat {
+    public query func getCurrentWalletScore(walletId: Types.WalletId, applicationId: Text) : async Nat {
         var totalScore = 0;
         let now = Time.now();
 
@@ -246,7 +319,7 @@ actor BlockID {
             case null { return 0 };
             case (?wallet) {
                 for (score in wallet.scores.vals()) {
-                    if (score.applicationId == applicationId and score.validatorId == validatorId and score.expirationTime > now) {
+                    if (score.applicationId == applicationId and score.expirationTime > now) {
                         totalScore += score.score;
                     };
                 };
@@ -284,16 +357,6 @@ actor BlockID {
         }
     };
 
-    public shared({caller}) func createProvider(provider: Types.Provider) : async Result.Result<(), Text> {
-        assert(_isAdmin(Principal.toText(caller)));
-        providers.put(provider.id, provider);
-        #ok(())
-    };
-
-    public query func getProviders() : async [(Text, Types.Provider)] {
-        Iter.toArray(providers.entries())
-    };
-
     public shared(msg) func createApplication(app: Types.Application) : async Result.Result<(), Text> {
         //Check exist application
         switch (applications.get(app.id)) {
@@ -317,7 +380,6 @@ actor BlockID {
                     logo = validator.logo; 
                     description = validator.description; 
                     criterias = []; 
-                    verifyMethod = validator.verifyMethod; 
                     owner = owner; 
                     totalScore=0
                 };

@@ -1,4 +1,5 @@
 import Nat "mo:base/Nat";
+import Bool "mo:base/Bool";
 // Types.mo
 module {
     public type WalletId = Principal;
@@ -20,7 +21,7 @@ module {
         score: Nat;
     };
 
-    public type ProviderParams = {
+    public type ProviderParamsBK = {
         minValue: Int;
         maxValue: ?Int;
         comparisonType: ComparisonType;
@@ -36,12 +37,48 @@ module {
         }
     };
 
+    public type ProviderParams = {
+        key: Text;
+        value: ?Text;
+        dataType: {#Int; #Text; #Bool; #Principal};
+        arguments: ?[ProviderParams];
+    };
+
+    public type Provider = {
+        id: Text;
+        name: Text;
+        description: Text;
+        moduleType: {
+            #Local: Text; //Local module name
+            #Remote: Text; //Remote canister id
+            #VC; //Define if is verify with a VC
+            #Custom; //Custom module...
+        };
+        params: [ProviderParams];//Key - Value
+        owner: ?Principal;//for custom providers
+    };
+
     public type Criteria = {
         id: CriteriaId;
         name: Text;
         description: Text;
+        providerId: ?Text;//Map with the provider template id
+        providerParams: ?[ProviderParams];
+        // templateId: Text;
+        isVC: Bool;
+        score: Nat;
+        expirationTime: Int;
+        autoVerify: Bool;
+    };
+
+    //Criteria info for the frontend
+    public type CriteriaInfo = {
+        id: CriteriaId;
+        name: Text;
+        description: Text;
         providerId: Text;
-        params: ProviderParams;
+        provider: Provider;
+        isVC: Bool;
         score: Nat;
         expirationTime: Int;
         autoVerify: Bool;
@@ -56,7 +93,7 @@ module {
         name: Text;
         logo: Text;
         description: Text;
-        verifyMethod: VerifyMethod;
+        // verifyMethod: VerifyMethod;
     };
     public type Validator = {
         id: ValidatorId;
@@ -65,16 +102,15 @@ module {
         logo: Text;
         description: Text;
         criterias: [Criteria];
-        verifyMethod: VerifyMethod;
         owner: Principal;
         totalScore: Nat;//Will be calculated by the module
     };
 
     public type UpdateValidator = {
+        applicationId: ApplicationId;
         name: Text;
         logo: Text;
         description: Text;
-        verifyMethod: VerifyMethod;
     };
 
     public type WalletScore = {
@@ -90,13 +126,6 @@ module {
         id: WalletId;
         applicationId: ApplicationId;//Separate the wallet from the application
         scores: [WalletScore];
-    };
-
-    public type Provider = {
-        id: Text;
-        name: Text;
-        description: Text;
-        moduleId: Text;
     };
 
     public type Application = {

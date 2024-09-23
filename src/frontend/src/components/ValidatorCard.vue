@@ -30,16 +30,17 @@
         </template>
         <template v-slot:title>
             {{ validator.name }} 
-            <v-chip label size="small" color="warning" prepend-icon="mdi-account-cancel" variant="outlined">
-                <span class="text-primary1">Not verified</span>
-            </v-chip>
+            <v-chip label class="ma-0 fw-bold float-right" size="small" prepend-icon="mdi-star" color="warning">
+                {{ validator.totalScore || 0 }} Points
+                </v-chip>
+            
         </template>
         <template v-slot:subtitle>
             <v-card-text class="py-1 px-0">
-                <v-chip class="ma-0 fw-bold" size="small" prepend-icon="mdi-star" color="warning">
-                {{ validator.totalScore || 0 }} Points
-                </v-chip>
-                <VcFlow :verifyMethod="validator.verifyMethod" />
+                <v-chip  size="small" color="warning" prepend-icon="mdi-account-cancel" variant="outlined" >
+                <span class="text-primary1">Not verified</span>
+            </v-chip>
+                <!-- <VcFlow :verifyMethod="validator.verifyMethod" /> -->
             </v-card-text>
         </template>
         

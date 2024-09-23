@@ -2,15 +2,23 @@
     import { ref, watchEffect } from 'vue'
     import { useWalletStore } from '@/store/walletStore'
     import { storeToRefs } from 'pinia'
-    import { getWalletScore } from '@/services/backendService'
+    import { getCurrentWalletScore } from '@/services/backendService'
+    import { config } from '@/config'
     const walletStore = useWalletStore()
     const { principalId, accountId, balance, isConnected, shortPrincipal } = storeToRefs(walletStore)
-    const walletScore = ref(10)
+    const walletScore = ref(10);
+    const loading = ref(false);
     watchEffect(async () => {
         if (isConnected.value) {
-            walletScore.value = await getWalletScore(principalId.value, '1')
+            walletScore.value = await getCurrentWalletScore(principalId.value, config.applicationId)
         }
     })
+
+    const refreshScore = async () => {
+        loading.value = true;
+        walletScore.value = await getCurrentWalletScore(principalId.value, config.applicationId)
+        loading.value = false;
+    }
 
 </script>
 <template>
@@ -31,7 +39,9 @@
                 <v-card-item>
                     <template v-slot:prepend>
                         <v-card-item>
-                            <div class="text-h2 mb-2 text-orange font-weight-bold">{{ walletScore }}</div>
+                            <div class="text-h2 mb-2 text-orange font-weight-bold">
+                                {{ walletScore }}
+                            </div>
                             <div class="text-subtitle-2">Higher than 90% of verified wallets</div>
                         </v-card-item>
                     </template>

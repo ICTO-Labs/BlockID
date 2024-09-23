@@ -7,6 +7,7 @@
     import Notify from '@/plugins/notify';
     import Dialog from '@/plugins/dialog';
     import VcFlow from '@/components/icons/VcFlow.vue';
+    import { getProviderParams } from '@/plugins/vcflow';
     const props = defineProps({
         validatorId: {
             type: String,
@@ -23,18 +24,21 @@
     })
     const validator = ref(null);
 
-    const startVCVerification = async (criteria) => {
+    const verifyVC = async (criteria) => {
+        console.log('criteria:', criteria)
         if(!isConnected.value){
             Dialog.connectWallet()
             return
         }
-        if(!('VcFlow' in validator.value.verifyMethod)){
+        if(!criteria.isVC){
             Notify.error('Sorry, '+validator.value.name+' does not support VC Flow')
             return
         }
+        const providerParams = getProviderParams(criteria.providerParams);
+        console.log('providerParams:', providerParams)
         const confirm = await Dialog.confirm({
                 title: 'Confirmation',
-                message: 'Are you sure you want to start verification with '+validator.value.name+' criterias?',
+                message: 'Are you sure you want to start verification for criteria: '+criteria.name+'?',
                 color: 'warning',
                 icon: 'mdi-alert'
         })
@@ -42,7 +46,10 @@
             loading.value = true;
             try{
                 Dialog.showLoading('Verifying your identity...')
-                let result = await VerifyService.getCredential(principalId.value);
+                let _issuerData = {
+                    issuerOrigin: criteria.issuerOrigin,
+                };
+                let result = await VerifyService.getCredential(principalId.value, providerParams);
                 console.log('getCredential result:', result);
                 loading.value = false;
                 Dialog.closeLoading()
@@ -91,20 +98,22 @@
         </template>
         <template v-slot:title>
             {{ validator.name }}
-            <v-chip label size="small" color="warning" prepend-icon="mdi-account-cancel" variant="outlined"
-                v-if="!verifyData.verified">
-                <span class="text-primary1">Not verified</span>
+
+            <v-chip label class="ma-0 fw-bold float-right" size="small" prepend-icon="mdi-star" color="warning">
+                {{ validator.totalScore || 0 }} Points
             </v-chip>
-            <v-chip label size="small" color="success" prepend-icon="mdi-account-check" variant="outlined" v-else>
-                <span class="text-primary1">Verified</span>
-            </v-chip>
+            
         </template>
         <template v-slot:subtitle>
             <v-card-text class="py-1 px-0">
-                <v-chip class="font-weight-bold" color="warning" size="small" prepend-icon="mdi-star">
-                    {{ validator.totalScore || 0 }} Points
+                <v-chip  size="small" color="warning" prepend-icon="mdi-account-cancel" variant="outlined"
+                    v-if="!verifyData.verified">
+                    <span class="text-primary1">Not verified</span>
                 </v-chip>
-                <VcFlow :verifyMethod="validator.verifyMethod" />
+                <v-chip  size="small" color="success" prepend-icon="mdi-account-check" variant="outlined" v-else>
+                    <span class="text-primary1">Verified</span>
+                </v-chip>
+                <!-- <VcFlow /> -->
                 <v-chip class="ms-2 ma-0" size="small" prepend-icon="mdi-account-multiple-check">
                     {{ validator.wallets || 0 }} Verified wallets
                 </v-chip>
@@ -118,7 +127,10 @@
                 <v-timeline-item class="mb-4" width="100%" dot-color="primary" size="small" color="primary" v-for="criteria in validator.criterias" :key="criteria.id">
                     <v-card width="100%">
                         <template v-slot:title>
-                            <div class="text-subtitle-1 font-weight-bold">{{ criteria.name }}</div>
+                            <div class="text-subtitle-1 font-weight-bold">
+                                {{ criteria.name }}
+                                <VcFlow :criteria="criteria.isVC" />
+                            </div>
                         </template>
                         <template v-slot:append>
                             <v-chip color="warning" size="small" prepend-icon="mdi-star" class="font-weight-bold">
@@ -129,8 +141,11 @@
                             <div>
                                 {{ criteria.description }}
                             </div>
-                            <div class="mt-2" v-if="criteria.score > 0 && 'VcFlow' in validator.verifyMethod">
-                                <v-btn color="warning" size="small" @click="startVCVerification(criteria)">Verify criteria</v-btn>
+                            <div class="mt-2" v-if="criteria.score > 0">
+                                <v-btn color="warning" size="small" @click="verifyVC(criteria)">
+                                    Start verification
+                                    <v-icon>mdi-arrow-right</v-icon>
+                                </v-btn>
                             </div>
                         </v-card-text>
                     </v-card>
@@ -141,9 +156,9 @@
         <v-divider></v-divider>
         <v-card-actions>
             <v-btn text="Cancel" variant="plain" @click="closeDialog"></v-btn>
-            <v-btn color="primary" @click="startVerification" :loading="loading" variant="tonal">
+            <!-- <v-btn color="primary" @click="startVerification" :loading="loading" variant="tonal">
                 Start verification
-            </v-btn>
+            </v-btn> -->
         </v-card-actions>
     </v-card>
 </template>

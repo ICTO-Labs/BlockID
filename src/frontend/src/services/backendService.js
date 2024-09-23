@@ -10,6 +10,15 @@ export const getWallets = async () => {
     }
 };
 
+export const getApplications = async () => {
+    try {
+        return await Backend.getApplications()
+    } catch (error) {
+        console.error(error)
+        return []
+    }
+};
+
 export const getValidators = async (applicationId=config.APPLICATION_ID) => {
     try {
         return await Backend.getValidators(applicationId)
@@ -37,9 +46,9 @@ export const getValidator = async (validatorId) => {
     }
 };
 
-export const getWalletScore = async (walletId, criteriaId) => {
+export const getCurrentWalletScore = async (walletId, applicationId=config.APPLICATION_ID) => {
     try {
-        return await Backend.getCurrentWalletScore(Principal.fromText(walletId), criteriaId)
+        return await Backend.getCurrentWalletScore(Principal.fromText(walletId), applicationId)
     } catch (error) {
         console.error(error)
         return null
@@ -72,3 +81,57 @@ export const createCriteria = async (validatorId, criteria) => {
         return null;
     }
 };
+
+export const updateCriteria = async (criteria) => {
+    try {
+        return await Backend.updateCriteria(criteria);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
+export const removeCriteria = async (criteriaId) => {
+    try {
+        return await Backend.removeCriteria(criteriaId);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
+export const updateApplication = async (application) => {
+    try {
+        return await Backend.updateApplication(application);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
+export const removeApplication = async (applicationId) => {
+    try {
+        return await Backend.removeApplication(applicationId);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
+export const updateValidator = async (validator) => {
+    try {
+        return await Backend.updateValidator(validator);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};  
+export const removeValidator = async (validatorId) => {
+    try {
+        return await Backend.removeValidator(validatorId);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+

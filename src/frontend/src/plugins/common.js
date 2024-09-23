@@ -81,13 +81,27 @@ const from32bits = ba => {
     return value;
 }
 export const shortAccount = (accountId)=>{
-   if(!accountId) return accountId;
-  return `${accountId.slice(0, 8)}...${accountId.slice(-8)}`;
+    if(!accountId) return accountId;
+    return `${accountId.slice(0, 8)}...${accountId.slice(-8)}`;
 }
 export const shortPrincipal = (principal) => {
     if(!principal) return principal;
-  const parts = (
-    typeof principal === "string" ? principal : principal.toText()
-  ).split("-");
-  return `${parts[0]}...${parts.slice(-1)[0]}`;
+    const parts = (
+        typeof principal === "string" ? principal : principal.toText()
+    ).split("-");
+    return `${parts[0]}...${parts.slice(-1)[0]}`;
+};
+
+export const toSimpleArray = (array) => {
+    console.log(array);
+    //Convert array to simple array, because most array from canister is array of tuple, like: [['id', [{id: 'id', name: 'name', description: 'description'}]]]
+    try {
+        return array.map(item => {
+            console.log(item);
+            return item[1];
+        });
+    } catch (e) {
+        console.log(e);
+        return array;
+    }
 };

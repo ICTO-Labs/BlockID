@@ -37,11 +37,11 @@
             <template v-slot:actions>
                 <v-spacer></v-spacer>
     
-                <v-btn @click="cancel" class="bg-red">
+                <v-btn @click="cancel">
                 Cancel
                 </v-btn>
     
-                <v-btn @click="confirm">
+                <v-btn @click="confirm" class="bg-red">
                 Confirm
                 </v-btn>
             </template>

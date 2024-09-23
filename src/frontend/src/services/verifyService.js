@@ -3,15 +3,15 @@ import { Principal } from '@dfinity/principal';
 import { requestVerifiablePresentation } from "@dfinity/verifiable-credentials/request-verifiable-presentation";
 
 class VerifyService {
-    async getCredential(userPrincipal){
+    async getCredential(userPrincipal, providerParams){
         try {
             const issuerData = {
-                origin: 'https://id.decideai.xyz',
-                canisterId: Principal.fromText('qgxyr-pyaaa-aaaah-qdcwq-cai'),
+                origin: providerParams.issuerOrigin,
+                canisterId: Principal.fromText(providerParams.issuerCanisterId),
             };
             const credentialData = {
                 credentialSpec: {
-                    credentialType: 'ProofOfUniqueness',
+                    credentialType: providerParams.credentialType,
                     arguments: {}
                 },
                 credentialSubject: Principal.fromText(userPrincipal)
@@ -21,7 +21,7 @@ class VerifyService {
                     console.log('VC Request Successful:', response);
                     //Send request to validate
                     try{
-                        const validationResult = await this.validateCredential(userPrincipal, response.Ok);
+                        const validationResult = await this.validateCredential(userPrincipal, response.Ok, providerParams);
                         resolve({success: validationResult && 'Ok' in validationResult, validationResult, score: 15});
                     }catch(error){
                         reject(error);
@@ -34,7 +34,7 @@ class VerifyService {
                 }
             
                 const identityProvider =  new URL("https://identity.ic0.app/");
-                const derivationOrigin = undefined;//"http://localhost:3000/";//https://3f66t-ryaaa-aaaap-qhriq-cai.icp0.io";
+                const derivationOrigin = providerParams.derivationOrigin ? providerParams.derivationOrigin : undefined;//"http://localhost:3000/";//https://3f66t-ryaaa-aaaap-qhriq-cai.icp0.io";
                 const requestParams = {
                     onSuccess,
                     onError,
@@ -51,17 +51,17 @@ class VerifyService {
             throw error;
         }
     }
-    async validateCredential(userPrincipal, jwt){
+    async validateCredential(userPrincipal, jwt, providerParams){
         console.log('Start verify...');
         try{
             const requestVerify = await validate.validate_ii_vp({
                 effective_vc_subject: Principal.fromText(userPrincipal),
-                issuer_origin: 'https://id.decideai.xyz/',
-                issuer_canister_id: Principal.fromText('qgxyr-pyaaa-aaaah-qdcwq-cai'),
+                issuer_origin: providerParams.issuerOrigin,
+                issuer_canister_id: Principal.fromText(providerParams.issuerCanisterId),
                 vp_jwt: jwt,
                 credential_spec: {
-                    credential_type: 'ProofOfUniqueness',
-                    arguments: [] 
+                    credential_type: providerParams.credentialType,
+                    arguments: providerParams.arguments
                 },
             });
             console.log('requestVerify', requestVerify);
