@@ -41,7 +41,6 @@ module {
         key: Text;
         value: ?Text;
         dataType: {#Int; #Text; #Bool; #Principal};
-        arguments: ?[ProviderParams];
     };
 
     public type Provider = {
@@ -64,6 +63,7 @@ module {
         description: Text;
         providerId: ?Text;//Map with the provider template id
         providerParams: ?[ProviderParams];
+        providerArgs: ?[ProviderParams];//Split the arguments from the params
         // templateId: Text;
         isVC: Bool;
         score: Nat;
