@@ -1,6 +1,7 @@
 import { useDialogStore } from '@/store/dialogStore'
 import {AuthClient} from "@dfinity/auth-client";
 import { principalToAccountId } from "@/plugins/common";
+import { config } from "@/config";
 const defaultOptions = {
     createOptions: {
         idleOptions: {
@@ -48,6 +49,7 @@ class AuthService {
             auth.login({
                 ...defaultOptions.loginOptions,
                 maxTimeToLive: 7 * 24 * 60 * 60 * 1000 * 1000 * 1000,
+                identityProvider: 'http://be2us-64aaa-aaaaa-qaabq-cai.localhost:4943/',
                 disableDefaultIdleCallback: true,
                 windowOpenerFeatures: `toolbar=0,location=0,menubar=0,width=${width},height=${height},top=${top},left=${left}`,
                 onSuccess: async () => {

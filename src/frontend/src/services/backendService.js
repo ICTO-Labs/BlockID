@@ -82,18 +82,18 @@ export const createCriteria = async (validatorId, criteria) => {
     }
 };
 
-export const updateCriteria = async (criteria) => {
+export const updateCriteria = async (validatorId, criteriaId, criteria) => {
     try {
-        return await Backend.updateCriteria(criteria);
+        return await Backend.updateCriteria(validatorId, criteriaId, criteria);
     } catch (error) {
         console.error(error);
         return null;
     }
 };
 
-export const removeCriteria = async (criteriaId) => {
+export const removeCriteria = async (validatorId, criteriaId) => {
     try {
-        return await Backend.removeCriteria(criteriaId);
+        return await Backend.removeCriteria(validatorId, criteriaId);
     } catch (error) {
         console.error(error);
         return null;
@@ -135,3 +135,11 @@ export const removeValidator = async (validatorId) => {
     }
 };
 
+export const getProviders = async () => {
+    try {
+        return await Backend.getProviders()
+    } catch (error) {
+        console.error(error)
+        return []
+    }
+}

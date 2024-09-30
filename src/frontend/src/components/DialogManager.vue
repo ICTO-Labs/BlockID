@@ -6,6 +6,10 @@
     import AlertDialog from './AlertDialog.vue'
     import VerifyDialog from '@/components/Validators/VerifyDialog.vue'
     import LoadingDialog from '@/components/LoadingDialog.vue'
+    import ParamsInfo from '@/components/Manage/ParamsInfo.vue'
+    import ApplicationForm from '@/components/Manage/Forms/Application.vue'
+    import ValidatorForm from '@/components/Manage/Forms/Validator.vue'
+    import CriteriaForm from '@/components/Manage/Forms/Criteria.vue'
     const dialogStore = useDialogStore()
     
     const dialogs = computed(() => dialogStore.dialogs)
@@ -17,6 +21,10 @@
             confirm: ConfirmDialog,
             verifyDialog: VerifyDialog,
             loadingDialog: LoadingDialog,
+            paramsInfo: ParamsInfo,
+            applicationForm: ApplicationForm,
+            validatorForm: ValidatorForm,
+            criteriaForm: CriteriaForm,
         // Add more dialog components as needed
         }
         return components[name] || null
@@ -33,7 +41,7 @@
             v-for="(dialog, name) in dialogs"
             :key="name"
             v-model="dialog.isOpen"
-            :max-width="dialog.props.maxWidth || 400"
+            :max-width="dialog.props.maxWidth || 700"
             :persistent="dialog.props.persistent || false"
             @confirm="dialog.props.onConfirm"
             @cancel="dialog.props.onCancel"

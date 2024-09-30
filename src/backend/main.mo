@@ -124,21 +124,16 @@ actor BlockID {
         };
     };
 
-    public shared(msg) func createCriteria(validatorId: Types.ValidatorId, providerId: Text, criteria: Types.Criteria) : async Result.Result<(), Text> {
+    public shared(msg) func createCriteria(validatorId: Types.ValidatorId, criteria: Types.Criteria) : async Result.Result<(), Text> {
         switch (validators.get(validatorId)) {
             case null { #err("Validator not found") };
             case (?validator) {
                 if (validator.owner != msg.caller and not _isAdmin(Principal.toText(msg.caller))) {
                     return #err("Not authorized");
                 };
-                let provider = switch (providers.get(providerId)) {
-                    case (?t) t;
-                    case null return #err("Provider not found")
-                };
                 let _newCriteria: Types.Criteria = { 
                     criteria with 
                     id = _generateId("criteria");
-                    providerId = ?providerId;
                 };
                 // criterias.put(_newCriteria.id, _newCriteria);
                 let updatedCriterias: [Types.Criteria] = Array.append(validator.criterias, [_newCriteria]);
