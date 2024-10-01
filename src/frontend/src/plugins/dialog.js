@@ -39,7 +39,7 @@ const Dialog = {
         const dialogStore = useDialogStore();
         return new Promise((resolve) => {
             dialogStore.openDialog('loadingDialog', {
-                message: message || 'Loading...'    ,
+                message: message || 'Loading...',
                 persistent: true,
                 maxWidth: 400,
                 onClose: () => {

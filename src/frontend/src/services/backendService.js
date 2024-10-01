@@ -1,60 +1,65 @@
-import { backend as Backend} from "@/../../declarations/backend";
-import { Principal } from "@dfinity/principal";
-import { config } from "@/config";
+import { backend as Backend } from '@/../../declarations/backend';
+import { Principal } from '@dfinity/principal';
+import { config } from '@/config';
 export const getWallets = async () => {
     try {
-        return await Backend.getWallets()
+        return await Backend.getWallets();
     } catch (error) {
-        console.error(error)
-        return []
+        console.error(error);
+        return [];
     }
 };
 
 export const getApplications = async () => {
     try {
-        return await Backend.getApplications()
+        return await Backend.getApplications();
     } catch (error) {
-        console.error(error)
-        return []
+        console.error(error);
+        return [];
     }
 };
 
-export const getValidators = async (applicationId=config.APPLICATION_ID) => {
+export const getValidators = async (applicationId = config.APPLICATION_ID) => {
     try {
-        return await Backend.getValidators(applicationId)
+        return await Backend.getValidators(applicationId);
     } catch (error) {
-        console.error(error)
-        return []
+        console.error(error);
+        return [];
     }
 };
 
 export const getWallet = async (walletId) => {
     try {
-        return await Backend.getWallet(walletId)
+        return await Backend.getWallet(walletId);
     } catch (error) {
-        console.error(error)
-        return null
+        console.error(error);
+        return null;
     }
-};  
+};
 
 export const getValidator = async (validatorId) => {
     try {
-        return await Backend.getValidator(validatorId)
+        return await Backend.getValidator(validatorId);
     } catch (error) {
-        console.error(error)
-        return null
+        console.error(error);
+        return null;
     }
 };
 
-export const getCurrentWalletScore = async (walletId, applicationId=config.APPLICATION_ID) => {
+export const getCurrentWalletScore = async (
+    walletId,
+    applicationId = config.APPLICATION_ID
+) => {
     try {
-        return await Backend.getCurrentWalletScore(Principal.fromText(walletId), applicationId)
+        return await Backend.getCurrentWalletScore(
+            Principal.fromText(walletId),
+            applicationId
+        );
     } catch (error) {
-        console.error(error)
-        return null
+        console.error(error);
+        return null;
     }
 };
-
 
 export const createApplication = async (application) => {
     try {
@@ -125,7 +130,7 @@ export const updateValidator = async (validator) => {
         console.error(error);
         return null;
     }
-};  
+};
 export const removeValidator = async (validatorId) => {
     try {
         return await Backend.removeValidator(validatorId);
@@ -137,9 +142,9 @@ export const removeValidator = async (validatorId) => {
 
 export const getProviders = async () => {
     try {
-        return await Backend.getProviders()
+        return await Backend.getProviders();
     } catch (error) {
-        console.error(error)
-        return []
+        console.error(error);
+        return [];
     }
-}
+};

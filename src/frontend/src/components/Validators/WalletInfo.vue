@@ -1,25 +1,31 @@
 <script setup>
-    import { ref, watchEffect } from 'vue'
-    import { useWalletStore } from '@/store/walletStore'
-    import { storeToRefs } from 'pinia'
-    import { getCurrentWalletScore } from '@/services/backendService'
-    import { config } from '@/config'
-    const walletStore = useWalletStore()
-    const { principalId, accountId, balance, isConnected, shortPrincipal } = storeToRefs(walletStore)
-    const walletScore = ref(10);
-    const loading = ref(false);
-    watchEffect(async () => {
-        if (isConnected.value) {
-            walletScore.value = await getCurrentWalletScore(principalId.value, config.applicationId)
-        }
-    })
-
-    const refreshScore = async () => {
-        loading.value = true;
-        walletScore.value = await getCurrentWalletScore(principalId.value, config.applicationId)
-        loading.value = false;
+import { ref, watchEffect } from 'vue';
+import { useWalletStore } from '@/store/walletStore';
+import { storeToRefs } from 'pinia';
+import { getCurrentWalletScore } from '@/services/backendService';
+import { config } from '@/config';
+const walletStore = useWalletStore();
+const { principalId, accountId, balance, isConnected, shortPrincipal } =
+    storeToRefs(walletStore);
+const walletScore = ref(10);
+const loading = ref(false);
+watchEffect(async () => {
+    if (isConnected.value) {
+        walletScore.value = await getCurrentWalletScore(
+            principalId.value,
+            config.applicationId
+        );
     }
+});
 
+const refreshScore = async () => {
+    loading.value = true;
+    walletScore.value = await getCurrentWalletScore(
+        principalId.value,
+        config.applicationId
+    );
+    loading.value = false;
+};
 </script>
 <template>
     <!-- Wallet Information Section -->
@@ -28,21 +34,33 @@
             <v-card color="primary" dark height="100%">
                 <template v-slot:title>
                     <span class="font-weight-black">Your Score</span>
-                    <v-btn icon="mdi-refresh" size="small" variant="text" @click="refreshScore">
+                    <v-btn
+                        icon="mdi-refresh"
+                        size="small"
+                        variant="text"
+                        @click="refreshScore"
+                    >
                         <v-icon>mdi-refresh</v-icon>
-                        <v-tooltip activator="parent" location="top">Refresh</v-tooltip>
+                        <v-tooltip activator="parent" location="top"
+                            >Refresh</v-tooltip
+                        >
                     </v-btn>
                 </template>
                 <template v-slot:subtitle>
-                    Normal, some applications may require at least 15 points to allow access
+                    Normal, some applications may require at least 15 points to
+                    allow access
                 </template>
                 <v-card-item>
                     <template v-slot:prepend>
                         <v-card-item>
-                            <div class="text-h2 mb-2 text-orange font-weight-bold">
+                            <div
+                                class="text-h2 mb-2 text-orange font-weight-bold"
+                            >
                                 {{ walletScore }}
                             </div>
-                            <div class="text-subtitle-2">Higher than 90% of verified wallets</div>
+                            <div class="text-subtitle-2">
+                                Higher than 90% of verified wallets
+                            </div>
                         </v-card-item>
                     </template>
                     <template v-slot:append>
@@ -59,36 +77,48 @@
             <v-card height="100%">
                 <v-card-title>Wallet Information</v-card-title>
                 <v-card-text>
-                <v-list>
-                    <v-list-item>
-                        <v-row>
-                            <v-col>
-                                <v-list-item>
-                                    <v-list-item-title>Principal</v-list-item-title>
-                                    <v-list-item-subtitle>{{ principalId || '---' }}</v-list-item-subtitle>
-                                </v-list-item>
-                            </v-col>
-                            
-                            <v-col>
-                                <v-list-item>
-                                    <v-list-item-title>Account Id</v-list-item-title>
-                                    <v-list-item-subtitle>{{ accountId || '---' }}</v-list-item-subtitle>
-                                </v-list-item>
-                            </v-col>
-
-                        </v-row>
-                    </v-list-item>
-                    <v-list-item>
+                    <v-list>
                         <v-list-item>
-                            <v-list-item-title>Balance</v-list-item-title>
-                            <v-list-item-subtitle>{{ balance || '---' }} ICP</v-list-item-subtitle>
+                            <v-row>
+                                <v-col>
+                                    <v-list-item>
+                                        <v-list-item-title
+                                            >Principal</v-list-item-title
+                                        >
+                                        <v-list-item-subtitle>{{
+                                            principalId || '---'
+                                        }}</v-list-item-subtitle>
+                                    </v-list-item>
+                                </v-col>
+
+                                <v-col>
+                                    <v-list-item>
+                                        <v-list-item-title
+                                            >Account Id</v-list-item-title
+                                        >
+                                        <v-list-item-subtitle>{{
+                                            accountId || '---'
+                                        }}</v-list-item-subtitle>
+                                    </v-list-item>
+                                </v-col>
+                            </v-row>
                         </v-list-item>
-                    </v-list-item>
-                </v-list>
+                        <v-list-item>
+                            <v-list-item>
+                                <v-list-item-title>Balance</v-list-item-title>
+                                <v-list-item-subtitle
+                                    >{{
+                                        balance || '---'
+                                    }}
+                                    ICP</v-list-item-subtitle
+                                >
+                            </v-list-item>
+                        </v-list-item>
+                    </v-list>
                 </v-card-text>
             </v-card>
         </v-col>
-</v-row>
+    </v-row>
 
-<!-- Existing Verification Items Section -->
+    <!-- Existing Verification Items Section -->
 </template>

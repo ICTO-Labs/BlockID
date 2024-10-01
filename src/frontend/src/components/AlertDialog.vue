@@ -1,11 +1,9 @@
 <script setup>
-    import { defineProps } from 'vue'
-    defineProps(['title', 'message', 'color', 'icon'])
+import { defineProps } from 'vue';
+defineProps(['title', 'message', 'color', 'icon']);
 </script>
 <template>
-    <v-sheet
-    class="position-relative"
-    >
+    <v-sheet class="position-relative">
         <v-card
             append-icon="$close"
             class="mx-auto"
@@ -14,13 +12,17 @@
             :color="color"
         >
             <template v-slot:prepend>
-                <v-icon :icon="icon"/>
+                <v-icon :icon="icon" />
             </template>
             <template v-slot:append>
-                <v-btn icon="$close" variant="text" @click="$emit('close')"></v-btn>
+                <v-btn
+                    icon="$close"
+                    variant="text"
+                    @click="$emit('close')"
+                ></v-btn>
             </template>
             <template v-slot:title>
-                <div >{{ title }}</div>
+                <div>{{ title }}</div>
             </template>
             <v-divider></v-divider>
 

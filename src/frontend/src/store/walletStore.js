@@ -7,7 +7,7 @@ export const useWalletStore = defineStore('wallet', {
         isConnected: false,
         balance: null,
         score: 0,
-        wallet: null,
+        wallet: null
     }),
     actions: {
         setWalletInfo(info) {
@@ -37,14 +37,17 @@ export const useWalletStore = defineStore('wallet', {
             this.saveToLocalStorage();
         },
         saveToLocalStorage() {
-            localStorage.setItem('walletInfo', JSON.stringify({
-                principalId: this.principalId,
-                accountId: this.accountId,
-                isConnected: this.isConnected,
-                balance: this.balance,
-                score: this.score,
-                wallet: this.wallet,
-            }));
+            localStorage.setItem(
+                'walletInfo',
+                JSON.stringify({
+                    principalId: this.principalId,
+                    accountId: this.accountId,
+                    isConnected: this.isConnected,
+                    balance: this.balance,
+                    score: this.score,
+                    wallet: this.wallet
+                })
+            );
         },
         loadFromLocalStorage() {
             const storedInfo = localStorage.getItem('walletInfo');
@@ -52,15 +55,19 @@ export const useWalletStore = defineStore('wallet', {
                 const parsedInfo = JSON.parse(storedInfo);
                 Object.assign(this, parsedInfo);
             }
-        },
+        }
     },
     getters: {
-        isAuthenticated: (state) => state.isConnected && state.principalId !== null,
+        isAuthenticated: (state) =>
+            state.isConnected && state.principalId !== null,
         shortPrincipal: (state) => {
             if (state.principalId) {
-                return `${state.principalId.slice(0, 5)}...${state.principalId.slice(-5)}`;
+                return `${state.principalId.slice(
+                    0,
+                    5
+                )}...${state.principalId.slice(-5)}`;
             }
             return null;
-        },
-    },
+        }
+    }
 });

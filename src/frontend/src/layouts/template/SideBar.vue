@@ -1,23 +1,33 @@
 <script setup>
-    import { ref, watch } from 'vue';
-    import { useProjectStore } from '@/store';
-    import { storeToRefs } from 'pinia';
+import { ref, watch } from 'vue';
+import { useProjectStore } from '@/store';
+import { storeToRefs } from 'pinia';
 
-    const projectStore = useProjectStore();
-    const { isDrawerOpen } = storeToRefs(projectStore);
+const projectStore = useProjectStore();
+const { isDrawerOpen } = storeToRefs(projectStore);
 
-    const drawer = ref(true);
-    const rail = ref(true);
+const drawer = ref(true);
+const rail = ref(true);
 
-    watch(isDrawerOpen, (newValue)=>{
-        rail.value = !newValue
-    })
-    const menus = ref([
-        { title: 'Verify', value: 1, prependIcon: 'mdi-star', link: '/'},
-        { title: 'Validators', value: 2, prependIcon: 'mdi-account-multiple', link: '/demo'},
-        { title: 'Gallery', value: 4, prependIcon: 'mdi-image-multiple', link: '/gallery'},
-        { title: 'Manage', value: 6, prependIcon: 'mdi-cog', link: '/manage'},
-    ]);
+watch(isDrawerOpen, (newValue) => {
+    rail.value = !newValue;
+});
+const menus = ref([
+    { title: 'Verify', value: 1, prependIcon: 'mdi-star', link: '/' },
+    {
+        title: 'Validators',
+        value: 2,
+        prependIcon: 'mdi-account-multiple',
+        link: '/demo'
+    },
+    {
+        title: 'Gallery',
+        value: 4,
+        prependIcon: 'mdi-image-multiple',
+        link: '/gallery'
+    },
+    { title: 'Manage', value: 6, prependIcon: 'mdi-cog', link: '/manage' }
+]);
 </script>
 <template>
     <div>
@@ -28,10 +38,14 @@
             :rail="drawer"
             v-model="isDrawerOpen"
         >
-        <v-avatar color="grey-darken-3" size="42" class="d-block text-center mx-auto mb-9"><span class="text-h4">B</span></v-avatar>
-        
+            <v-avatar
+                color="grey-darken-3"
+                size="42"
+                class="d-block text-center mx-auto mb-9"
+                ><span class="text-h4">B</span></v-avatar
+            >
 
-        <v-divider></v-divider>
+            <v-divider></v-divider>
             <v-list density="compact" nav>
                 <v-list-item
                     v-for="item in menus"

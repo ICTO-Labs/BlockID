@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getProviderParams } from '@/plugins/vcflow'
+import { ref, onMounted } from 'vue';
+import { getProviderParams } from '@/plugins/vcflow';
 const props = defineProps({
     providerParams: {
         type: Array,
@@ -9,16 +9,20 @@ const props = defineProps({
     },
     title: {
         type: String,
-        required: true,
+        required: true
     },
     providerArgs: {
         type: Array,
         required: true,
         default: []
     }
-})
-const params = ref(getProviderParams(props.providerParams))
-const args = ref(Array.isArray(props.providerArgs) && props.providerArgs.length > 0 ? props.providerArgs[0] : [])
+});
+const params = ref(getProviderParams(props.providerParams));
+const args = ref(
+    Array.isArray(props.providerArgs) && props.providerArgs.length > 0
+        ? props.providerArgs[0]
+        : []
+);
 </script>
 <template>
     <v-card>
@@ -36,7 +40,15 @@ const args = ref(Array.isArray(props.providerArgs) && props.providerArgs.length 
                 <tbody>
                     <!-- Loop from object -->
                     <tr>
-                        <td colspan="2" class="text-primary text-h6">Params <v-chip label size="small" class="font-weight-bold">{{ Object.keys(params).length }}</v-chip></td>
+                        <td colspan="2" class="text-primary text-h6">
+                            Params
+                            <v-chip
+                                label
+                                size="small"
+                                class="font-weight-bold"
+                                >{{ Object.keys(params).length }}</v-chip
+                            >
+                        </td>
                     </tr>
                     <tr v-for="(value, key) in params" :key="key">
                         <td>{{ key }}</td>
@@ -45,7 +57,15 @@ const args = ref(Array.isArray(props.providerArgs) && props.providerArgs.length 
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="2" class="text-primary text-h6">Arguments <v-chip label size="small" class="font-weight-bold">{{ args.length }}</v-chip></td>
+                        <td colspan="2" class="text-primary text-h6">
+                            Arguments
+                            <v-chip
+                                label
+                                size="small"
+                                class="font-weight-bold"
+                                >{{ args.length }}</v-chip
+                            >
+                        </td>
                     </tr>
                     <tr v-for="(item, k) in args" :key="k">
                         <td>{{ item.key }}</td>

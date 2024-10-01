@@ -1,17 +1,20 @@
 // Composables
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router';
 
-const routes = [  
+const routes = [
     {
-        path: '/home',  name: 'Main',
+        path: '/home',
+        name: 'Main',
         component: () => import('@/layouts/template/Main'),
         children: [
             {
-                path: '/',   name: 'Home',
+                path: '/',
+                name: 'Home',
                 component: () => import('@/views/Home')
             },
             {
-                path: '/demo',   name: 'Demo',
+                path: '/demo',
+                name: 'Demo',
                 component: () => import('@/views/Demo')
             },
             {
@@ -25,16 +28,17 @@ const routes = [
                 component: () => import('@/views/Manage')
             },
             {
-                path: '/:pathMatch(.*)*', name: 'Error404',
+                path: '/:pathMatch(.*)*',
+                name: 'Error404',
                 component: () => import('@/views/Error404')
             }
         ]
     }
-]
+];
 
 const router = createRouter({
     history: createWebHistory(process.env.BASE_URL),
-    routes,
-})
+    routes
+});
 
-export default router
+export default router;

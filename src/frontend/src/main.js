@@ -3,10 +3,10 @@ import { createApp } from 'vue';
 import router from './router';
 import * as filter from './filter';
 // Vuetify
-import 'vuetify/styles'
+import 'vuetify/styles';
 import vuetify from './plugins/vuetify';
 
-import { config} from './config';
+import { config } from './config';
 import App from './App.vue';
 
 const app = createApp(App);

@@ -1,31 +1,35 @@
 <script setup>
-    import { ref, onMounted } from 'vue'
-    import { updateApplication } from '@/services/backendService'
+import { ref, onMounted } from 'vue';
+import { updateApplication } from '@/services/backendService';
 
-    const props = defineProps(['editedItem'])
-    const emit = defineEmits(['save', 'cancel'])
+const props = defineProps(['editedItem']);
+const emit = defineEmits(['save', 'cancel']);
 
-    const form = ref({
-        id: null,
-        name: '',
-        description: ''
-    })
+const form = ref({
+    id: null,
+    name: '',
+    description: ''
+});
 
-    const saveApplication = async () => {
-        await updateApplication(form.value)
-        emit('save')
+const saveApplication = async () => {
+    await updateApplication(form.value);
+    emit('save');
+};
+
+onMounted(() => {
+    if (props.editedItem) {
+        form.value = { ...props.editedItem };
     }
-
-    onMounted(() => {
-        if (props.editedItem) {
-            form.value = { ...props.editedItem }
-        }
-    })
+});
 </script>
 
 <template>
     <v-form @submit.prevent="saveApplication">
-        <v-text-field v-model="form.name" label="Application Name" required></v-text-field>
+        <v-text-field
+            v-model="form.name"
+            label="Application Name"
+            required
+        ></v-text-field>
         <v-textarea v-model="form.description" label="Description"></v-textarea>
         <div class="d-flex justify-end pt-4">
             <v-btn type="submit" color="primary" class="mr-2">Save</v-btn>

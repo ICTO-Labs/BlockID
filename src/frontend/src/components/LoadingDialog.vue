@@ -1,6 +1,6 @@
 <script setup>
-    import { defineProps } from 'vue'
-    defineProps(['message'])
+import { defineProps } from 'vue';
+defineProps(['message']);
 </script>
 <template>
     <v-sheet class="position-relative">
@@ -16,8 +16,12 @@
                 </template>
 
                 <template v-slot:append>
-                    <v-progress-circular color="primary" indeterminate="disable-shrink" size="16"
-                        width="2"></v-progress-circular>
+                    <v-progress-circular
+                        color="primary"
+                        indeterminate="disable-shrink"
+                        size="16"
+                        width="2"
+                    ></v-progress-circular>
                 </template>
             </v-list-item>
         </v-list>

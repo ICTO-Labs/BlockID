@@ -1,29 +1,29 @@
 <script setup>
-    import { ref } from 'vue'
-    import { RouterView } from 'vue-router';
-    import SystemBar from './SystemBar'
-    import AppBar from './AppBar'
-    import Sidebar from './SideBar'
-    import ToolBar from './ToolBar'
-    import Contents from './Content'
-    import Footer from './Footer'
-    import DialogManager from '@/components/DialogManager.vue'
-    import SnackBar from '@/components/SnackBar.vue'
-    import { useProjectStore } from '@/store';
-    const projectStore = useProjectStore();
+import { ref } from 'vue';
+import { RouterView } from 'vue-router';
+import SystemBar from './SystemBar';
+import AppBar from './AppBar';
+import Sidebar from './SideBar';
+import ToolBar from './ToolBar';
+import Contents from './Content';
+import Footer from './Footer';
+import DialogManager from '@/components/DialogManager.vue';
+import SnackBar from '@/components/SnackBar.vue';
+import { useProjectStore } from '@/store';
+const projectStore = useProjectStore();
 
-    import { useTheme } from 'vuetify'
+import { useTheme } from 'vuetify';
 
-    const theme = useTheme()
+const theme = useTheme();
 </script>
 <template>
-    <v-app :theme="theme.global.name.value? theme.global.name.value : 'light'"> 
+    <v-app :theme="theme.global.name.value ? theme.global.name.value : 'light'">
         <SystemBar />
         <AppBar />
         <Sidebar />
-        <v-main>        
+        <v-main>
             <ToolBar />
-            <v-container fluid>     
+            <v-container fluid>
                 <RouterView />
             </v-container>
             <Footer />

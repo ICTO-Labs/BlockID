@@ -6,7 +6,7 @@ export const useSnackbarStore = defineStore('snackbar', {
         message: '',
         color: 'success',
         title: '',
-        timeout: 10000,
+        timeout: 10000
     }),
     actions: {
         showSnackbar(message, title, color = 'success', timeout = 10000) {
@@ -18,6 +18,6 @@ export const useSnackbarStore = defineStore('snackbar', {
         },
         hideSnackbar() {
             this.isVisible = false;
-        },
-    },
+        }
+    }
 });
