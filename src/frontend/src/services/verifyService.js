@@ -66,7 +66,7 @@ class VerifyService {
     async validateCredential(userPrincipal, jwt, providerParams, providerArgs) {
         console.log('Start verify...');
         try {
-            const requestVerify = await validate.validate_ii_vp({
+            const requestVerify = await validate.validate({
                 effective_vc_subject: Principal.fromText(userPrincipal),
                 issuer_origin: providerParams.issuerOrigin,
                 issuer_canister_id: Principal.fromText(

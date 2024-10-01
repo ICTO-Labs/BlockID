@@ -77,19 +77,15 @@ cd "$SCRIPTS_DIR/.."
 # URL used by II-issuer in the id_alias-verifiable credentials (hard-coded in II)
 II_VC_URL="https://identity.ic0.app/"
 # URL used by meta-issuer in the issued verifiable credentials (hard-coded in meta-issuer)
-ISSUER_VC_URL="https://id.decideai.xyz/"
 
 DFX_NETWORK="${DFX_NETWORK:-local}"
 RP_CANISTER_ID="$(dfx canister id validate --network "$DFX_NETWORK")"
 II_CANISTER_ID="${II_CANISTER_ID:-$(dfx canister id internet_identity --network "$DFX_NETWORK")}"
-ISSUER_CANISTER_ID="${ISSUER_CANISTER_ID:-$(dfx canister id meta_issuer --network "$DFX_NETWORK")}"
 
 echo "Using DFX network: $DFX_NETWORK" >&2
 echo "Using RP canister: $RP_CANISTER_ID" >&2
 echo "Using II vc_url: $II_VC_URL" >&2
 echo "Using II canister: $II_CANISTER_ID" >&2
-echo "Using issuer vc_url: $ISSUER_VC_URL" >&2
-echo "Using issuer canister: $ISSUER_CANISTER_ID" >&2
 
 # At the time of writing dfx outputs incorrect JSON with dfx ping (commas between object
 # entries are missing).
@@ -123,12 +119,6 @@ dfx canister call validate config '(
         ic_root_key_der = vec '"$rootkey_did"';
         ii_vc_url = "'"$II_VC_URL"'";
         ii_canister_id = principal "'"$II_CANISTER_ID"'";
-        issuers = vec { 
-        record { 
-            vc_url = "'"$ISSUER_VC_URL"'"; 
-            canister_id = principal "'"$ISSUER_CANISTER_ID"'" 
-        } 
-        };
     }
 )' --network "$DFX_NETWORK"
 # Revert changes

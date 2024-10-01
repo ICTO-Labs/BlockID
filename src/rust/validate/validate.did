@@ -4,13 +4,15 @@ type CredentialSpec = record {
   arguments : opt vec record { text; ArgumentValue };
   credential_type : text;
 };
-type IssuerData = record { canister_id : principal; vc_url : text };
+type IssuerInfo = record {
+  credential_specs : vec CredentialSpec;
+  issuer_origin : text;
+};
 type Result = variant { Ok; Err : text };
 type Result_1 = variant { Ok; Err : ContentError };
 type RpInit = record {
   ii_canister_id : principal;
   ic_root_key_der : blob;
-  issuers : vec IssuerData;
   ii_vc_url : text;
 };
 type ValidateVpRequest = record {
@@ -21,9 +23,12 @@ type ValidateVpRequest = record {
   credential_spec : CredentialSpec;
 };
 service : (opt RpInit) -> {
-  add_issuer : (principal, text) -> (Result);
+  add_admin : (principal) -> (Result);
+  add_issuer : (principal, text, vec CredentialSpec) -> (Result);
   config : (RpInit) -> (Result);
-  get_issuers : () -> (vec record { principal; text }) query;
+  get_admins : () -> (vec principal) query;
+  get_issuers : () -> (vec record { principal; IssuerInfo }) query;
+  remove_admin : (principal) -> (Result);
   remove_issuer : (principal) -> (Result);
   validate : (ValidateVpRequest) -> (Result_1);
 }
