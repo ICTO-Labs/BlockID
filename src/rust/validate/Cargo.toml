@@ -28,7 +28,7 @@ sha2 = "^0.10" # set bound to match ic-certified-map bound
 lazy_static = "1.4"
 include_dir = "0.7"
 ciborium = "0.2"
-
+url = "2.3.0"
 [dev-dependencies]
 assert_matches = "1.5.0"
 candid_parser = "0.1"

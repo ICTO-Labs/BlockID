@@ -1,40 +1,29 @@
-type ValidateVpRequest = record {
-    vp_jwt : text;
-    effective_vc_subject : principal;
-    credential_spec : CredentialSpec;
-    issuer_origin : text;
-    issuer_canister_id : principal;
-};
-
+type ArgumentValue = variant { Int : int32; String : text };
+type ContentError = variant { NotAuthorized : text };
 type CredentialSpec = record {
-    credential_type : text;
-    arguments : opt vec record { text; ArgumentValue };
+  arguments : opt vec record { text; ArgumentValue };
+  credential_type : text;
 };
-
-type ArgumentValue = variant {
-    Int : int;
-    String : text;
-};
-
-type ContentError = variant {
-    NotAuthorized : text;
-};
-
-type IssuerData = record {
-    vc_url : text;
-    canister_id : principal;
-};
-
+type IssuerData = record { canister_id : principal; vc_url : text };
+type Result = variant { Ok; Err : text };
+type Result_1 = variant { Ok; Err : ContentError };
 type RpInit = record {
-    ic_root_key_der : vec nat8;
-    ii_vc_url : text;
-    ii_canister_id : principal;
-    issuers : vec IssuerData;
+  ii_canister_id : principal;
+  ic_root_key_der : blob;
+  issuers : vec IssuerData;
+  ii_vc_url : text;
 };
-
+type ValidateVpRequest = record {
+  effective_vc_subject : principal;
+  issuer_origin : text;
+  issuer_canister_id : principal;
+  vp_jwt : text;
+  credential_spec : CredentialSpec;
+};
 service : (opt RpInit) -> {
-    validate_ii_vp : (ValidateVpRequest) -> (variant { Ok; Err : ContentError });
-    get_issuers : () -> (vec record { text; principal }) query;
-    config : (RpInit) -> ();
-    set_default_config : () -> ();
+  add_issuer : (principal, text) -> (Result);
+  config : (RpInit) -> (Result);
+  get_issuers : () -> (vec record { principal; text }) query;
+  remove_issuer : (principal) -> (Result);
+  validate : (ValidateVpRequest) -> (Result_1);
 }
