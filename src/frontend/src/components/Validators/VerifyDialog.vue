@@ -176,7 +176,7 @@ watchEffect(() => {
                         <template v-slot:title>
                             <div class="text-subtitle-1 font-weight-bold">
                                 {{ criteria.name }}
-                                <VcFlow :criteria="criteria.isVC" />
+                                <VcFlow :criteria="criteria.isVC" v-if="criteria.isVC" />
                             </div>
                         </template>
                         <template v-slot:append>

@@ -7,14 +7,19 @@ import { config } from '@/config';
 const walletStore = useWalletStore();
 const { principalId, accountId, balance, isConnected, shortPrincipal } =
     storeToRefs(walletStore);
-const walletScore = ref(10);
+const walletScore = ref(0);
 const loading = ref(false);
+const getScore = async ()=>{
+    loading.value = true;
+    walletScore.value = await getCurrentWalletScore(
+        principalId.value,
+        config.applicationId
+    );
+    loading.value = false;
+}
 watchEffect(async () => {
     if (isConnected.value) {
-        walletScore.value = await getCurrentWalletScore(
-            principalId.value,
-            config.applicationId
-        );
+        await getScore();
     }
 });
 
@@ -38,7 +43,7 @@ const refreshScore = async () => {
                         icon="mdi-refresh"
                         size="small"
                         variant="text"
-                        @click="refreshScore"
+                        @click="getScore"
                     >
                         <v-icon>mdi-refresh</v-icon>
                         <v-tooltip activator="parent" location="top"
@@ -53,11 +58,15 @@ const refreshScore = async () => {
                 <v-card-item>
                     <template v-slot:prepend>
                         <v-card-item>
-                            <div
-                                class="text-h2 mb-2 text-orange font-weight-bold"
-                            >
-                                {{ walletScore }}
+                            <div class="text-h2 mb-2 text-orange font-weight-bold" >
+                                {{ walletScore || 0 }}
                             </div>
+                            <v-skeleton-loader
+                                v-if="loading"
+                                class="ma-0 pa-0"
+                                max-width="64"
+                                max-height="64"
+                            ></v-skeleton-loader>
                             <div class="text-subtitle-2">
                                 Higher than 90% of verified wallets
                             </div>

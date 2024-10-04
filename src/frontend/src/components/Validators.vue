@@ -4,8 +4,12 @@ import { ref, onMounted, computed } from 'vue';
 import { getValidators } from '@/services/backendService';
 const validators = ref([]);
 onMounted(async () => {
-    validators.value = await getValidators();
-    console.log(validators.value);
+    const _validators = await getValidators();
+    if(_validators && _validators.length > 0){
+        validators.value = _validators
+    }else{
+        validators.value = []
+    }
 });
 </script>
 <template>

@@ -54,8 +54,7 @@ const showAddDialog = () => {
         <tbody>
             <tr v-for="criteria in criterias" :key="criteria.id">
                 <td>
-                    {{ criteria.name }} {{ criteria.id
-                    }}<VcFlow v-if="criteria.isVC"></VcFlow>
+                    {{ criteria.name }} <VcFlow v-if="criteria.isVC"></VcFlow>
                 </td>
                 <td>{{ criteria.description }}</td>
                 <td>
@@ -67,7 +66,7 @@ const showAddDialog = () => {
                         text-color="white"
                         @click.stop="showParams(criteria)"
                     >
-                        {{ criteria.providerId[0] }}
+                        {{ criteria.providerId[0] || 'Custom' }}
                         <v-tooltip activator="parent" location="top"
                             >Show params</v-tooltip
                         >

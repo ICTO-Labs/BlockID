@@ -363,6 +363,19 @@ actor BlockID {
         };
     };
 
+    public shared(msg) func updateApplication(app: Types.Application) : async Result.Result<(), Text> {
+        switch (applications.get(app.id)) {
+            case null { #err("Application not found") };
+            case (?a) {
+                if (a.owner != msg.caller and not _isAdmin(Principal.toText(msg.caller))) {
+                    return #err("Not authorized");
+                };
+                applications.put(app.id, app);
+                return #ok(());
+            };
+        };
+    };
+
     private func _createValidator(validator: Types.CreateValidator, owner: Principal) : async Result.Result<Types.Validator, Text> {
         //Check exist validator
         let _validatorId = _generateId("validator");

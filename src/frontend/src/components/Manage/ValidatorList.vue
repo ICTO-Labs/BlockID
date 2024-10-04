@@ -3,8 +3,8 @@ import { ref, onMounted, watch } from 'vue';
 import { getValidators, removeValidator } from '@/services/backendService';
 import CriteriaList from './CriteriaList.vue';
 import { toSimpleArray } from '@/plugins/common';
-
-const props = defineProps(['application-id', 'validators']);
+import Dialog from '@/plugins/dialog';
+const props = defineProps(['applicationId', 'validators']);
 const emit = defineEmits(['open-dialog', 'show-params']);
 
 const validators = ref([]);
@@ -23,6 +23,30 @@ const deleteValidator = async (id) => {
 const handleOpenDialog = (...args) => {
     emit('open-dialog', ...args);
 };
+const showEditDialog = (validator) => {
+    Dialog.custom('validatorForm', {
+        validator: Object.assign({}, validator),
+        applicationId: props.applicationId,
+        method: 'edit',
+        maxWidth: 1000,
+        title: 'Edit validator: ' + validator.name,
+        onSave: () => {
+            fetchValidators();
+        }
+    });
+};
+const showAddDialog = () => {
+    Dialog.custom('validatorForm', {
+        method: 'add',
+        maxWidth: 1000,
+        applicationId: props.applicationId,
+        title: 'Create validator',
+        onSave: () => {
+            fetchValidators();
+        }
+    });
+};
+
 
 onMounted(fetchValidators);
 watch(() => props.applicationId, fetchValidators);
@@ -42,11 +66,7 @@ watch(() => props.applicationId, fetchValidators);
                         size="small"
                         class="mr-2"
                         @click.stop="
-                            $emit('open-dialog', {
-                                dialog: 'validator',
-                                method: 'edit',
-                                params: validator
-                            })
+                            showEditDialog(validator)
                         "
                     >
                         <v-icon>mdi-pencil</v-icon>
@@ -66,7 +86,6 @@ watch(() => props.applicationId, fetchValidators);
                     :validatorId="validator.id"
                     :criterias="validator.criterias"
                     @show-params="$emit('show-params', $event)"
-                    @open-dialog="handleOpenDialog"
                 />
             </v-expansion-panel-text>
         </v-expansion-panel>
@@ -75,11 +94,7 @@ watch(() => props.applicationId, fetchValidators);
     <div class="mt-4">
         <v-btn
             @click="
-                $emit('open-dialog', {
-                    dialog: 'validator',
-                    method: 'add',
-                    params: { applicationId: props.applicationId }
-                })
+                showAddDialog()
             "
         >
             <v-icon>mdi-plus</v-icon> Create Validator

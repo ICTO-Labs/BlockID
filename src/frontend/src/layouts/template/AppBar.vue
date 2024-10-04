@@ -8,9 +8,10 @@ import Notify from '@/plugins/notify';
 import { useWalletStore } from '@/store/walletStore';
 import { storeToRefs } from 'pinia';
 import authService from '@/services/authService';
-
+import Connect from "@/actor/Connect";
+import { WALLETS } from '@/config';
 const walletStore = useWalletStore();
-const { principalId, accountId, balance, isConnected, shortPrincipal } =
+const { principalId, accountId, balance, isConnected, shortPrincipal, wallet } =
     storeToRefs(walletStore);
 
 const theme = useTheme();
@@ -30,7 +31,12 @@ function toggleTheme() {
 const handleConnect = () => {
     Dialog.connectWallet();
 };
+const checkConnect = async () => {
 
+    console.log('check Connect');
+    let wallet = await Connect.canister('2ouva-viaaa-aaaaq-aaamq-cai', 'icrc1', false).icrc1_name();
+    console.log('Connect', wallet);
+};
 const handleLogout = async () => {
     const confirm = await Dialog.confirm({
         title: 'Warning',
@@ -99,7 +105,9 @@ const toggleDrawer = () => {
             <v-menu v-else>
                 <template v-slot:activator="{ props }">
                     <v-btn dark variant="flat" v-bind="props" class="text-none">
-                        <v-icon>mdi-wallet</v-icon>
+                        <v-avatar size="28" class="mr-4">
+                            <v-img :src="WALLETS[wallet].logo" />
+                        </v-avatar>
                         {{ shortPrincipal }}
                     </v-btn>
                 </template>
@@ -111,7 +119,7 @@ const toggleDrawer = () => {
                         </template>
                         <v-list-item-title>My Account</v-list-item-title>
                     </v-list-item>
-                    <v-list-item to="/setting">
+                    <v-list-item @click.stop="checkConnect">
                         <template v-slot:prepend>
                             <v-icon icon="mdi-cog"></v-icon>
                         </template>

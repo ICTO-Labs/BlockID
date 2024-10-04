@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 import { getApplications, removeApplication } from '@/services/backendService';
 import ValidatorList from './ValidatorList.vue';
 import { toSimpleArray } from '@/plugins/common';
-
+import Dialog from '@/plugins/dialog';
 const props = defineProps(['providers']);
 const emit = defineEmits(['open-dialog', 'show-params']);
 
@@ -14,10 +14,31 @@ const fetchApplications = async () => {
 };
 
 const deleteApplication = async (id) => {
-    if (confirm('Bạn có chắc chắn muốn xóa ứng dụng này không?')) {
+    if (confirm('Are you sure you want to delete this application?')) {
         await removeApplication(id);
         fetchApplications();
     }
+};
+const showEditDialog = (app) => {
+    Dialog.custom('applicationForm', {
+        app: Object.assign({}, app),
+        method: 'edit',
+        maxWidth: 1000,
+        title: 'Edit application: ' + app.name,
+        onSave: () => {
+            fetchApplications();
+        }
+    });
+};
+const showAddDialog = () => {
+    Dialog.custom('applicationForm', {
+        method: 'add',
+        maxWidth: 1000,
+        title: 'Create application',
+        onSave: () => {
+            fetchApplications();
+        }
+    });
 };
 const handleOpenDialog = (...args) => {
     emit('open-dialog', ...args);
@@ -37,11 +58,7 @@ onMounted(fetchApplications);
                         size="small"
                         class="mr-2"
                         @click.stop="
-                            $emit('open-dialog', {
-                                dialog: 'application',
-                                method: 'edit',
-                                params: app
-                            })
+                            showEditDialog(app)
                         "
                     >
                         <v-icon>mdi-pencil</v-icon>
@@ -58,7 +75,7 @@ onMounted(fetchApplications);
             <v-expansion-panel-text>
                 <div class="mb-4">{{ app.description }}</div>
                 <ValidatorList
-                    :application-id="app.id"
+                    :applicationId="app.id"
                     :validators="app.validators"
                     @show-params="$emit('show-params', $event)"
                     @open-dialog="handleOpenDialog"
@@ -69,13 +86,7 @@ onMounted(fetchApplications);
     <v-divider></v-divider>
     <div class="mt-4">
         <v-btn
-            @click="
-                $emit('open-dialog', {
-                    dialog: 'application',
-                    method: 'add',
-                    params: {}
-                })
-            "
+            @click="showAddDialog"
             ><v-icon>mdi-plus</v-icon> Create application</v-btn
         >
     </div>
