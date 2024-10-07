@@ -25,7 +25,7 @@ actor BlockID {
     private var providers = HashMap.HashMap<Text, Types.Provider>(0, Text.equal, Text.hash);
     private stable var _providers: [(Text, Types.Provider)] = [];
     private stable var _admins : [Text] = ["lekqg-fvb6g-4kubt-oqgzu-rd5r7-muoce-kppfz-aaem3-abfaj-cxq7a-dqe"];
-
+    private stable var _vcCanisterId : [Text] = ["cpmcr-yeaaa-aaaaa-qaala-cai"];//Remote canister for VC validation
 
     //ID generator
     private var nextValidatorId : Nat = 0;
@@ -242,6 +242,72 @@ actor BlockID {
         };
     };
 
+    //Verify wallet scrore from remote canister
+    private func _verifyFromVC({
+        application_id: Text;
+        validator_id: Text;
+        criterial_id: Text;
+        wallet_id: Text;
+    }) : async Result.Result<Bool, Text> {
+        //TODO: Implement VC verification
+        let walletId = Principal.fromText(wallet_id);
+        var _totalScore = 0;
+        switch (applications.get(application_id)) {
+            case null { return #err("Application not found") };
+            case (?_) {
+                switch (validators.get(validator_id)) {
+                    case null { return #err("Validator not found") };
+                    case (?validator) {
+                        var newScore : ?Types.WalletScore = null;
+                        let now = Time.now();
+                        for (criteria in validator.criterias.vals()) {
+                            if(criterial_id == criteria.id and criteria.isVC == true){//Only verify VC criterias
+                                //Set score as criteria.score
+                                _totalScore += criteria.score;
+                                newScore := ?{
+                                    applicationId = application_id;
+                                    validatorId = validator_id;
+                                    score = criteria.score;
+                                    verified = true;
+                                    verificationTime = now;
+                                    expirationTime = now + 12 * 30 * 24 * 60 * 60 * 1000000000; // 12 months in nanoseconds
+                                };
+                                // Update wallet scores
+                                switch (wallets.get(walletId)) {
+                                    case null {
+                                        switch (newScore) { 
+                                            case null { };
+                                            case (?score) {
+                                                wallets.put(walletId, { id = walletId; applicationId = application_id; scores = [score] });
+                                            };
+                                        };
+                                    };
+                                    case (?wallet) {
+                                        let updatedScores = Array.append(
+                                            Array.filter(wallet.scores, func (score: Types.WalletScore) : Bool {
+                                                score.applicationId != application_id and score.validatorId != validator_id
+                                            }),
+                                            switch (newScore) {
+                                                case null { [] };
+                                                case (?score) { [score] };
+                                            }
+                                        );
+                                        wallets.put(walletId, { id = walletId; applicationId = application_id; scores = updatedScores });
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        if(_totalScore > 0){
+            return #ok(true);
+        }else{
+            return #err("No VC criterias found");
+        };
+    };
+
     public shared(msg) func verifyWallet(applicationId: Text, validatorId: Types.ValidatorId, walletId: Types.WalletId) : async Result.Result<Nat, Text> {
         var totalScore = 0;
         switch (applications.get(applicationId)) {
@@ -374,6 +440,71 @@ actor BlockID {
                 return #ok(());
             };
         };
+    };
+
+    func _isVcCanisterId(canisterId: Text) : Bool {
+        for (id in _vcCanisterId.vals()) {
+            if (id == canisterId) {
+                return true;
+            };
+        };
+        return false;
+    };
+
+    //Validate VC: Caller must be a vcCanisterId
+    public shared(msg) func validateVC(
+        criterial_id: Text,
+        validator_id: Text,
+        application_id: Text,
+        wallet_id: Text
+        ) : async Types.ValidateResponse {
+        let canisterId = Principal.toText(msg.caller);
+        if (not _isVcCanisterId(canisterId)) {
+            return #Err("Not authorized");
+        };
+        //TODO: Implement VC validation
+        let result = await _verifyFromVC({
+            criterial_id = criterial_id;
+            validator_id = validator_id;
+            application_id = application_id;
+            wallet_id = wallet_id;
+        });
+        switch (result) {
+            case (#ok(true)) { #Ok(true) };
+            case (#ok(false)) { #Ok(false) };
+            case (#err(err)) { #Err(err) };
+        };
+    };
+
+    //Add/remove vcCanisterId
+    public shared(msg) func addVcCanisterId(canisterId: Text) : async Result.Result<(), Text> {
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return #err("Not authorized");
+        };
+        if (Array.indexOf(canisterId, _vcCanisterId, Text.equal) != null) {
+            return #err("Canister ID already exists");
+        };
+        //Check if principal valid
+        try{
+            let _p = Principal.fromText(canisterId);
+            _vcCanisterId := Array.append(_vcCanisterId, [canisterId]);
+            return #ok(());
+        }catch(_e){
+            return #err("Input canister ID is not a principal");
+        };
+    };
+
+    public shared(msg) func removeVcCanisterId(canisterId: Text) : async Result.Result<(), Text> {
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return #err("Not authorized");
+        };
+        _vcCanisterId := Array.filter(_vcCanisterId, func (id: Text) : Bool { id != canisterId });
+        return #ok(());
+    };
+
+    //Get all vcCanisterId
+    public query func getVcCanisterId() : async [Text] {
+        _vcCanisterId
     };
 
     private func _createValidator(validator: Types.CreateValidator, owner: Principal) : async Result.Result<Types.Validator, Text> {

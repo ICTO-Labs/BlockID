@@ -135,4 +135,16 @@ module {
         owner: Principal;
         validators: [ValidatorId];
     };
+    
+    public type ValidateData = {
+        application_id: Text;
+        validator_id: Text;
+        criterial_id: Text;
+        wallet_id: Text;
+    };
+
+    public type ValidateResponse = {
+        #Ok: Bool;
+        #Err: Text;
+    };
 }

@@ -5,7 +5,8 @@ use ic_cdk_macros::{init, query, update, export_candid};
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashSet};
 use url::Url;
-
+use ic_cdk::api::call::call;
+use ic_cdk::api::call::RejectionCode;
 use canister_sig_util::extract_raw_root_pk_from_der;
 use vc_util::issuer_api::CredentialSpec;
 use vc_util::{validate_ii_presentation_and_claims, VcFlowSigners};
@@ -23,6 +24,7 @@ struct RpConfig {
     ii_canister_id: Principal,
     issuers: BTreeMap<Principal, IssuerInfo>,
     admins: HashSet<Principal>,
+    remote_canister_id: Option<Principal>,
 }
 
 thread_local! {
@@ -37,8 +39,17 @@ impl Default for RpConfig {
             ii_canister_id: Principal::anonymous(),
             issuers: BTreeMap::new(),
             admins: HashSet::new(),
+            remote_canister_id: None,
         }
     }
+}
+
+#[derive(CandidType, Deserialize)]
+pub struct ValidateData {
+    pub application_id: String,
+    pub validator_id: String,
+    pub criterial_id: String,
+    pub wallet_id: String,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -48,11 +59,14 @@ pub struct ValidateVpRequest {
     pub credential_spec: CredentialSpec,
     pub issuer_origin: String,
     pub issuer_canister_id: Principal,
+    pub validate_data: ValidateData,
 }
 
 #[derive(CandidType, Deserialize)]
 pub enum ContentError {
     NotAuthorized(String),
+    VcValidationFailed(String),
+    RemoteCanisterError(String),
 }
 
 #[derive(CandidType, Deserialize)]
@@ -87,11 +101,30 @@ fn config(init_arg: RpInit) -> Result<(), String> {
             set.insert(caller);
             set
         },
+        remote_canister_id: None,
     };
     CONFIG.with(|cfg| *cfg.borrow_mut() = config);
     Ok(())
 }
+#[update]
+#[candid_method(update)]
+fn set_remote_canister_id(canister_id: Principal) -> Result<(), String> {
+    let caller = caller();
+    if !is_admin(&caller) {
+        return Err("Not authorized".to_string());
+    }
 
+    CONFIG.with(|cfg| {
+        cfg.borrow_mut().remote_canister_id = Some(canister_id);
+    });
+    Ok(())
+}
+
+#[query]
+#[candid_method(query)]
+fn get_remote_canister_id() -> Option<Principal> {
+    CONFIG.with(|cfg| cfg.borrow().remote_canister_id)
+}
 #[init]
 #[candid_method(init)]
 fn init(init_arg: Option<RpInit>) {
@@ -102,31 +135,30 @@ fn init(init_arg: Option<RpInit>) {
 
 #[update]
 #[candid_method]
-fn validate(mut req: ValidateVpRequest) -> Result<(), ContentError> {
+async fn validate(mut req: ValidateVpRequest) -> Result<(), String> {
     req.issuer_origin = normalize_url(&req.issuer_origin)
-        .map_err(|e| ContentError::NotAuthorized(format!("Invalid issuer origin: {}", e)))?;
+        .map_err(|e| format!("Invalid issuer origin: {}", e))?;
 
     let (ic_root_key_raw, vc_flow_signers) = CONFIG.with(|config| {
         let config = config.borrow();
         let Some(issuer_info) = config.issuers.get(&req.issuer_canister_id) else {
-            return Err(ContentError::NotAuthorized(format!(
+            return Err(format!(
                 "issuer not supported: {}",
                 req.issuer_canister_id
-            )));
+            ));
         };
         
         if issuer_info.issuer_origin != req.issuer_origin {
-            return Err(ContentError::NotAuthorized(format!(
+            return Err(format!(
                 "mismatched issuer origin: expected {}, got {}",
                 issuer_info.issuer_origin, req.issuer_origin
-            )));
+            ));
         }
         
         if !issuer_info.credential_specs.contains(&req.credential_spec) {
-            return Err(ContentError::NotAuthorized(format!(
-                "unsupported credential spec for issuer: {}",
+            return Err(format!("unsupported credential spec for issuer: {}",
                 req.issuer_origin
-            )));
+            ));
         }
         
         Ok((
@@ -148,11 +180,32 @@ fn validate(mut req: ValidateVpRequest) -> Result<(), ContentError> {
         &ic_root_key_raw,
         time() as u128,
     ) {
-        Ok(()) => Ok(()),
-        Err(err) => Err(ContentError::NotAuthorized(format!(
+        Ok(()) => {
+            // Validate success, call call_remote_canister
+            // return Ok(());
+            let mut validate_data = req.validate_data;
+            validate_data.wallet_id = req.effective_vc_subject.to_string();
+            let _rs = call_remote_canister(validate_data).await;
+            match _rs {
+                Ok(()) => Ok(()),
+                Err(msg) => Err(msg),
+            }
+            // let encoded_data = candid::encode_one(validate_data)
+            //     .map_err(|e| ContentError::NotAuthorized(format!("Error encoding validation data: {}", e)))?;
+
+            // let result = call_remote_canister("validateVC".to_string(), encoded_data).await
+            //     .map_err(|e| ContentError::NotAuthorized(format!("Error calling remote canister: {}", e)))?;
+
+            // match result {
+            //     RemoteCallResponse::ok(true) => Ok(()),
+            //     RemoteCallResponse::ok(false) => Err(ContentError::NotAuthorized("Error validate VC from remote canister".to_string())),
+            //     RemoteCallResponse::err(e) => Err(ContentError::NotAuthorized(format!("Error remote canister: {}", e))),
+            // }
+        },
+        Err(err) => Err(format!(
             "VP validation error: {:?}",
             err
-        ))),
+        )),
     }
 }
 
@@ -237,6 +290,30 @@ fn remove_admin(admin: Principal) -> Result<(), String> {
         }
     });
     Ok(())
+}
+
+async fn call_remote_canister(req: ValidateData) -> Result<(), String> {
+    let remote_canister_id = CONFIG.with(|cfg| cfg.borrow().remote_canister_id)
+        .ok_or_else(|| ("Remote canister ID not set".to_string()))?;
+
+    let call_result: Result<(Result<bool, String>, ), (RejectionCode, String)> = call(
+        remote_canister_id,
+        "validateVC",
+        (req.criterial_id, req.validator_id, req.application_id, req.wallet_id),
+    ).await;
+    
+    match call_result {
+        Ok((_result,)) => {
+            match _result {
+                Ok(true) => Ok(()),
+                Ok(false) => Err("VC validation failed".to_string()),
+                Err(msg) => Err(format!("{}", msg)),
+            }
+        }
+        Err((code, msg)) => {
+            Err(format!("Error validate VC from remote canister {:?}: {}", code, msg))
+        }
+    }
 }
 
 #[query]
