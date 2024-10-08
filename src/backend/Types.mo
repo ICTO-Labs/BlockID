@@ -113,19 +113,30 @@ module {
         description: Text;
     };
 
-    public type WalletScore = {
-        applicationId: ApplicationId;
-        validatorId: ValidatorId;
+    public type CriteriaScore = {
+        criteriaId: CriteriaId;
         score: Nat;
         verified: Bool;
-        verificationTime: Int;
+        verificationTime: ?Int;
+    };
+
+    public type ApplicationScore = {
+        applicationId: ApplicationId;
+        validatorScores: [WalletScore];
+    };
+
+    // Update WalletScore
+    public type WalletScore = {
+        validatorId: ValidatorId;
+        criteriaScores: [CriteriaScore];
+        totalScore: Nat;
+        lastVerificationTime: Int;
         expirationTime: Int;
     };
 
     public type Wallet = {
         id: WalletId;
-        applicationId: ApplicationId;//Separate the wallet from the application
-        scores: [WalletScore];
+        applicationScores: [ApplicationScore];
     };
 
     public type Application = {

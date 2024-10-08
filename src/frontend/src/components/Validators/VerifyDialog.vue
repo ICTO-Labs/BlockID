@@ -2,12 +2,13 @@
 import { ref, onMounted, watchEffect } from 'vue';
 import VerifyService from '@/services/verifyService';
 import { useWalletStore } from '@/store/walletStore';
-import { getValidator } from '@/services/backendService';
+import { getValidator, verifyByCriteria, verifyByValidator } from '@/services/backendService';
 import { storeToRefs } from 'pinia';
 import Notify from '@/plugins/notify';
 import Dialog from '@/plugins/dialog';
 import VcFlow from '@/components/icons/VcFlow.vue';
 import { getProviderParams } from '@/plugins/vcflow';
+import { APPLICATION_ID } from '@/config';
 const props = defineProps({
     validatorId: {
         type: String,
@@ -24,6 +25,34 @@ const verifyData = ref({
     verified: false
 });
 const validator = ref(null);
+
+const startVerification = async (criteriaId=null) => {
+    if (!isConnected.value) {
+        Dialog.connectWallet();
+        return;
+    }
+    loading.value = true;
+    try {
+        Dialog.showLoading('Verifying your wallet...');
+        let _result = null;
+        switch(criteriaId) {
+            case null:
+            _result = await verifyByValidator(APPLICATION_ID, props.validatorId);
+                console.log('verifyByValidator result:', _result);
+                break;
+            default:
+            _result = await verifyByCriteria(APPLICATION_ID, props.validatorId, [criteriaId]);
+                console.log('verifyByCriteria result:', _result);
+                break;
+        }
+        loading.value = false;
+        Dialog.closeLoading();
+    } catch (error) {
+        Notify.warning('Verification failed: ' + error);
+    }
+};
+
+
 
 const verifyVC = async (criteria) => {
     console.log('criteria:', criteria);
@@ -195,9 +224,18 @@ watchEffect(() => {
                             </div>
                             <div class="mt-2" v-if="criteria.score > 0">
                                 <v-btn
-                                    color="warning"
+                                    color="success"
                                     size="small"
-                                    @click="verifyVC(criteria)"
+                                    @click="verifyVC(criteria)" v-if="criteria.isVC"
+                                >
+                                    Start VC verification
+                                    <v-icon>mdi-arrow-right</v-icon>
+                                </v-btn>
+
+                                <v-btn
+                                    color="primary"
+                                    size="small"
+                                    @click="startVerification(criteria.id)" v-else
                                 >
                                     Start verification
                                     <v-icon>mdi-arrow-right</v-icon>

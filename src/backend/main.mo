@@ -9,6 +9,7 @@ import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 import Bool "mo:base/Bool";
+import Blob "mo:base/Blob";
 
 import Types "Types";
 import Provider "Provider";
@@ -26,6 +27,10 @@ actor BlockID {
     private stable var _providers: [(Text, Types.Provider)] = [];
     private stable var _admins : [Text] = ["lekqg-fvb6g-4kubt-oqgzu-rd5r7-muoce-kppfz-aaem3-abfaj-cxq7a-dqe"];
     private stable var _vcCanisterId : [Text] = ["cpmcr-yeaaa-aaaaa-qaala-cai"];//Remote canister for VC validation
+
+    //Params config
+    private stable var LIMIT_APPLICATION_PER_USER : Nat = 10;
+    private stable var LIMIT_VALIDATOR_PER_APPLICATION : Nat = 10;
 
     //ID generator
     private var nextValidatorId : Nat = 0;
@@ -82,7 +87,9 @@ actor BlockID {
 
     //Create custom provider template
     public shared(msg) func createProvider(provider: Types.Provider) : async Result.Result<(), Text> {
-        assert(_isAdmin(Principal.toText(msg.caller)));//Only admin can create provider template
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return #err("Not authorized");
+        };
         switch (providers.get(provider.id)) {
             case null {
                 providers.put(provider.id, { provider with owner = ?msg.caller });
@@ -93,7 +100,9 @@ actor BlockID {
     };
 
     public shared(msg) func updateProvider(providerId: Text, updatedProvider: Types.Provider) : async Result.Result<(), Text> {
-        assert(_isAdmin(Principal.toText(msg.caller)));//Only admin can update provider template
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return #err("Not authorized");
+        };
         switch (providers.get(providerId)) {
             case null { #err("Provider not found") };
             case (?_provider) {
@@ -249,129 +258,160 @@ actor BlockID {
         criterial_id: Text;
         wallet_id: Text;
     }) : async Result.Result<Bool, Text> {
-        //TODO: Implement VC verification
         let walletId = Principal.fromText(wallet_id);
-        var _totalScore = 0;
-        switch (applications.get(application_id)) {
-            case null { return #err("Application not found") };
-            case (?_) {
-                switch (validators.get(validator_id)) {
-                    case null { return #err("Validator not found") };
-                    case (?validator) {
-                        var newScore : ?Types.WalletScore = null;
+        
+        switch (applications.get(application_id), validators.get(validator_id)) {
+            case (null, _) { return #err("Application not found") };
+            case (_, null) { return #err("Validator not found") };
+            case (?_, ?validator) {
+                let criteria = Array.find(validator.criterias, func (c: Types.Criteria) : Bool { 
+                    c.id == criterial_id and c.isVC == true 
+                });
+                
+                switch (criteria) {
+                    case null { return #err("Criteria not found") };
+                    case (?vcCriteria) {
                         let now = Time.now();
-                        for (criteria in validator.criterias.vals()) {
-                            if(criterial_id == criteria.id and criteria.isVC == true){//Only verify VC criterias
-                                //Set score as criteria.score
-                                _totalScore += criteria.score;
-                                newScore := ?{
-                                    applicationId = application_id;
-                                    validatorId = validator_id;
-                                    score = criteria.score;
-                                    verified = true;
-                                    verificationTime = now;
-                                    expirationTime = now + 12 * 30 * 24 * 60 * 60 * 1000000000; // 12 months in nanoseconds
-                                };
-                                // Update wallet scores
-                                switch (wallets.get(walletId)) {
-                                    case null {
-                                        switch (newScore) { 
-                                            case null { };
-                                            case (?score) {
-                                                wallets.put(walletId, { id = walletId; applicationId = application_id; scores = [score] });
-                                            };
-                                        };
-                                    };
-                                    case (?wallet) {
-                                        let updatedScores = Array.append(
-                                            Array.filter(wallet.scores, func (score: Types.WalletScore) : Bool {
-                                                score.applicationId != application_id and score.validatorId != validator_id
-                                            }),
-                                            switch (newScore) {
-                                                case null { [] };
-                                                case (?score) { [score] };
-                                            }
-                                        );
-                                        wallets.put(walletId, { id = walletId; applicationId = application_id; scores = updatedScores });
-                                    };
-                                };
-                            };
+                        let criteriaScore = {
+                            criteriaId = vcCriteria.id;
+                            score = vcCriteria.score;
+                            verified = true;
+                            verificationTime = ?now;
                         };
+                        
+                        // Update wallet score
+                        updateWalletScore(walletId, application_id, validator_id, [criteriaScore]);
+                        
+                        return #ok(true);
                     };
                 };
             };
         };
-        if(_totalScore > 0){
-            return #ok(true);
-        }else{
-            return #err("No VC criterias found");
-        };
     };
 
-    public shared(msg) func verifyWallet(applicationId: Text, validatorId: Types.ValidatorId, walletId: Types.WalletId) : async Result.Result<Nat, Text> {
-        var totalScore = 0;
-        switch (applications.get(applicationId)) {
-            case null { return #err("Application not found") };
-            case (?_) {
-                switch (validators.get(validatorId)) {
-                    case null { return #err("Validator not found") };
-                    case (?validator) {
-                        var newScore : ?Types.WalletScore = null;
-                        let now = Time.now();
-                        for (criteria in validator.criterias.vals()) {
-                            if(criteria.isVC == false){//Only verify non-VC criterias
-                                let provider = switch (providers.get(Option.get(criteria.providerId, ""))) {
-                                    case (?t) t;
-                                    case null return #err("Provider not found")
-                                };
-                                let result = await Provider.verifyCriteria(walletId, criteria, provider);
-                                if (result.isValid) {
-                                    totalScore += result.score;
-                                };
-                            };
-                        };
+    //Verify single criteria
+    private func _verifySingleCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider) : async Types.CriteriaScore {
+        let now = Time.now();
+        if (criteria.isVC == false and provider.id != "") {
+            let result = await Provider.verifyCriteria(walletId, criteria, provider);
+            {
+                criteriaId = criteria.id;
+                score = if (result.isValid) criteria.score else 0;
+                verified = result.isValid;
+                verificationTime = ?now;
+            }
+        } else {
+            {
+                criteriaId = criteria.id;
+                score = 0;
+                verified = false;
+                verificationTime = null;
+            }
+        }
+    };
 
-                        if (totalScore > 0) {
-                            newScore := ?{
-                                applicationId = applicationId;
-                                validatorId = validatorId;
-                                score = totalScore;
-                                verified = true;
-                                verificationTime = now;
-                                expirationTime = now + 12 * 30 * 24 * 60 * 60 * 1000000000; // 12 months in nanoseconds
-                            };
-                        };
+    //Update wallet score
+    private func updateWalletScore(walletId: Types.WalletId, applicationId: Text, validatorId: Types.ValidatorId, newCriteriaScores: [Types.CriteriaScore]) : () {
+        let wallet = switch (wallets.get(walletId)) {
+            case null {
+                {
+                    id = walletId;
+                    applicationScores = [];
+                }
+            };
+            case (?w) { w };
+        };
 
-                        // Update wallet scores
-                        switch (wallets.get(walletId)) {
-                            case null {
-                                switch (newScore) {
-                                    case null { };
-                                    case (?score) {
-                                        wallets.put(walletId, { id = walletId; applicationId = applicationId; scores = [score] });
-                                    };
-                                };
+        let totalScore = Array.foldLeft<Types.CriteriaScore, Nat>(newCriteriaScores, 0, func (acc, cs) { acc + cs.score });
+        
+        let newWalletScore : Types.WalletScore = {
+            validatorId = validatorId;
+            criteriaScores = newCriteriaScores;
+            totalScore = totalScore;
+            lastVerificationTime = Time.now();
+            expirationTime = Time.now() + 365 * 24 * 60 * 60 * 1000000000; // 1 year in nanoseconds
+        };
+
+        let updatedApplicationScores = switch (Array.find(wallet.applicationScores, func (as: Types.ApplicationScore) : Bool { as.applicationId == applicationId })) {
+            case null {
+                Array.append(wallet.applicationScores, [{
+                    applicationId = applicationId;
+                    validatorScores = [newWalletScore];
+                }])
+            };
+            case (?_appScore) {
+                Array.map(wallet.applicationScores, func (as: Types.ApplicationScore) : Types.ApplicationScore {
+                    if (as.applicationId == applicationId) {
+                        {
+                            applicationId = as.applicationId;
+                            validatorScores = Array.append(
+                                Array.filter(as.validatorScores, func (vs: Types.WalletScore) : Bool { vs.validatorId != validatorId }),
+                                [newWalletScore]
+                            )
+                        }
+                    } else {
+                        as
+                    }
+                })
+            };
+        };
+        wallets.put(walletId, { wallet with applicationScores = updatedApplicationScores });
+    };
+
+    //Verify wallet with criteria
+    private func _verifyWalletByCriteria(applicationId: Text, validatorId: Types.ValidatorId, criteriaIds: [Types.CriteriaId], walletId: Types.WalletId) : async Result.Result<Nat, Text> {
+        switch (applications.get(applicationId), validators.get(validatorId)) {
+            case (null, _) { #err("Application not found") };
+            case (_, null) { #err("Validator not found") };
+            case (?_, ?validator) {
+                var criteriaScores : [Types.CriteriaScore] = [];
+                for (criteriaId in criteriaIds.vals()) {
+                    switch (Array.find(validator.criterias, func (c: Types.Criteria) : Bool { c.id == criteriaId })) {
+                        case null { /* Skip if criteria not found */ };
+                        case (?criteria) {
+                            //Check provider, skip if not exist
+                            let provider = switch (providers.get(Option.get(criteria.providerId, ""))) {
+                                case null { {
+                                    id = "";
+                                    name = "";
+                                    description = "";
+                                    moduleType = #Custom;
+                                    owner = null;
+                                    params = [];
+                                } };
+                                case (?p) { p };
                             };
-                            case (?wallet) {
-                                let updatedScores = Array.append(
-                                    Array.filter(wallet.scores, func (score: Types.WalletScore) : Bool { 
-                                        score.applicationId != applicationId and score.validatorId != validatorId
-                                    }),
-                                    switch (newScore) {
-                                        case null { [] };
-                                        case (?score) { [score] };
-                                    }
-                                );
-                                wallets.put(walletId, { id = walletId; applicationId = applicationId; scores = updatedScores });
-                            };
+                            let criteriaScore = await _verifySingleCriteria(walletId, criteria, provider);
+                            criteriaScores := Array.append(criteriaScores, [criteriaScore]);
                         };
                     };
                 };
+
+                updateWalletScore(walletId, applicationId, validatorId, criteriaScores);
+                let totalScore = Array.foldLeft<Types.CriteriaScore, Nat>(criteriaScores, 0, func (acc, cs) { acc + cs.score });
+                #ok(totalScore)
             };
-        };
-        #ok(totalScore)
+        }
     };
 
+    //Public verify by criterial
+    public shared({caller}) func verifyWalletByCriteria(applicationId: Text, validatorId: Types.ValidatorId, criteriaIds: [Types.CriteriaId]) : async Result.Result<Nat, Text> {
+        await _verifyWalletByCriteria(applicationId, validatorId, criteriaIds, caller)
+    };
+
+    // Verify all criteria of a validator
+    public shared({caller}) func verifyWalletByValidator(applicationId: Text, validatorId: Types.ValidatorId) : async Result.Result<Nat, Text> {
+        switch (applications.get(applicationId), validators.get(validatorId)) {
+            case (null, _) { #err("Application not found") };
+            case (_, null) { #err("Validator not found") };
+            case (?_, ?validator) {
+                let criteriaIds = Array.map<Types.Criteria, Types.CriteriaId>(validator.criterias, func (c) { c.id });
+                await _verifyWalletByCriteria(applicationId, validatorId, criteriaIds, caller)
+            };
+        }
+    };
+
+    //Get current wallet score
     public query func getCurrentWalletScore(walletId: Types.WalletId, applicationId: Text) : async Nat {
         var totalScore = 0;
         let now = Time.now();
@@ -379,9 +419,13 @@ actor BlockID {
         switch (wallets.get(walletId)) {
             case null { return 0 };
             case (?wallet) {
-                for (score in wallet.scores.vals()) {
-                    if (score.applicationId == applicationId and score.expirationTime > now) {
-                        totalScore += score.score;
+                for (score in wallet.applicationScores.vals()) {
+                    if(score.applicationId == applicationId){
+                        for (validatorScore in score.validatorScores.vals()) {
+                            if (validatorScore.expirationTime > now) {
+                                totalScore += validatorScore.totalScore;
+                            };
+                        };
                     };
                 };
             };
@@ -390,7 +434,7 @@ actor BlockID {
         totalScore
     };
 
-    public query func getWalletScore(walletId: Types.WalletId, applicationId: ?Text) : async {
+    public query func getWalletScore(walletId: Types.WalletId, applicationId: Text) : async {
         totalScore: Nat;
         validScores: [Types.WalletScore];
         expiredScores: [Types.WalletScore];
@@ -403,13 +447,16 @@ actor BlockID {
         switch (wallets.get(walletId)) {
             case null { { totalScore = 0; validScores = []; expiredScores = [] } };
             case (?wallet) {
-                for (score in wallet.scores.vals()) {
-                    if (applicationId == null or score.applicationId == Option.get(applicationId, "")) {
-                        if (score.expirationTime > now and score.verified) {
-                            totalScore += score.score;
-                            validScores := Array.append(validScores, [score]);
-                        } else if (score.verified) {
-                            expiredScores := Array.append(expiredScores, [score]);
+                //Check application
+                for (score in wallet.applicationScores.vals()) {
+                    if (score.applicationId == applicationId) {
+                        for (validatorScore in score.validatorScores.vals()) {
+                            if (validatorScore.expirationTime > now) {
+                                totalScore += validatorScore.totalScore;
+                                validScores := Array.append(validScores, [validatorScore]);
+                            } else {
+                                expiredScores := Array.append(expiredScores, [validatorScore]);
+                            };
                         };
                     };
                 };
@@ -418,14 +465,26 @@ actor BlockID {
         }
     };
 
+    //Check limit application per user
+    private func _checkLimitApplication(caller: Principal) : Bool {
+        let myApplications = Array.filter(Iter.toArray(applications.entries()), func (entry: (Text, Types.Application)) : Bool {
+            let (_, app) = entry;
+            app.owner == caller
+        });
+        Nat.lessOrEqual(Array.size(myApplications), LIMIT_APPLICATION_PER_USER)
+    };
+
     public shared(msg) func createApplication(app: Types.Application) : async Result.Result<(), Text> {
         //Check exist application
+        if (not _checkLimitApplication(msg.caller)) {
+            return #err("Limit application per user is reached, current limit: " # Nat.toText(LIMIT_APPLICATION_PER_USER));
+        };
         switch (applications.get(app.id)) {
             case null {
                 applications.put(app.id, { app with owner = msg.caller });
                 return #ok(());
             };
-            case (?a) { return #err("Application ID already exists") };
+            case (?_) { return #err("Application ID already exists") };
         };
     };
 
@@ -442,7 +501,8 @@ actor BlockID {
         };
     };
 
-    func _isVcCanisterId(canisterId: Text) : Bool {
+    //Check if canisterId is a vcCanisterId
+    private func _isVcCanisterId(canisterId: Text) : Bool {
         for (id in _vcCanisterId.vals()) {
             if (id == canisterId) {
                 return true;
@@ -528,8 +588,21 @@ actor BlockID {
             case (?v) { return #err("Validator ID already exists") };
         };
     };
+
+    //Check limit validator per application
+    private func _checkLimitValidator(caller: Principal) : Bool {
+        let myValidators = Array.filter(Iter.toArray(validators.entries()), func (entry: (Types.ValidatorId, Types.Validator)) : Bool {
+            let (_, validator) = entry;
+            validator.owner == caller
+        });
+        Nat.lessOrEqual(Array.size(myValidators), LIMIT_VALIDATOR_PER_APPLICATION)
+    };
+    
     public shared(msg) func createValidator(appId: Text, validator: Types.CreateValidator) : async Result.Result<Types.Validator, Text> {
         //Create new validator and add to application
+        if (not _checkLimitValidator(msg.caller)) {
+            return #err("Limit validator per application is reached, current limit: " # Nat.toText(LIMIT_VALIDATOR_PER_APPLICATION));
+        };
         let result = await _createValidator(validator, msg.caller);
         switch (result) {
             case (#err(err)) { return #err(err) };

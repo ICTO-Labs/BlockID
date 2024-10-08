@@ -106,7 +106,7 @@ class AuthService {
     async InternetIdentity() {
         const auth = await AuthClient.create();
         const width = 500;
-        const height = screen.height;
+        const height = screen.height/2;
         const left = (screen.width / 2 - width / 2) | 0;
         const top = (screen.height / 2 - height / 2) | 0;
 

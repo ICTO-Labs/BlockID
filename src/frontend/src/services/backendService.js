@@ -1,8 +1,26 @@
 import { backend as Backend } from '@/../../declarations/backend';
 import { Principal } from '@dfinity/principal';
-import { config } from '@/config';
+import { BACKEND_CANISTER_ID, APPLICATION_ID } from '@/config';
 import Connect from "@/actor/Connect";
-const BACKEND_CANISTER_ID = 'cbopz-duaaa-aaaaa-qaaka-cai';
+
+export const verifyByCriteria = async (applicationId, validatorId, criteriaIds) => {
+    try {
+        return await Backend.verifyWalletByCriteria(applicationId, validatorId, criteriaIds);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
+export const verifyByValidator = async (applicationId, validatorId) => {
+    try {
+        return await Backend.verifyWalletByValidator(applicationId, validatorId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
 export const getWallets = async () => {
     try {
         return await Backend.getWallets();
@@ -14,14 +32,14 @@ export const getWallets = async () => {
 
 export const getApplications = async () => {
     try {
-        return await Backend.getApplications();
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getApplications();
     } catch (error) {
         console.error(error);
         return [];
     }
 };
 
-export const getValidators = async (applicationId = config.APPLICATION_ID) => {
+export const getValidators = async (applicationId = APPLICATION_ID) => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getValidators(applicationId);
     } catch (error) {
@@ -50,7 +68,7 @@ export const getValidator = async (validatorId) => {
 
 export const getCurrentWalletScore = async (
     walletId,
-    applicationId = config.APPLICATION_ID
+    applicationId = APPLICATION_ID
 ) => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getCurrentWalletScore(
@@ -65,7 +83,7 @@ export const getCurrentWalletScore = async (
 
 export const createApplication = async (application) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).createApplication(application);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').createApplication(application);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -73,7 +91,7 @@ export const createApplication = async (application) => {
 };
 export const createValidator = async (applicationId, validator) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).createValidator(applicationId, validator);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').createValidator(applicationId, validator);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -82,7 +100,7 @@ export const createValidator = async (applicationId, validator) => {
 
 export const createCriteria = async (validatorId, criteria) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).createCriteria(validatorId, criteria);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').createCriteria(validatorId, criteria);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -91,7 +109,7 @@ export const createCriteria = async (validatorId, criteria) => {
 
 export const updateCriteria = async (validatorId, criteriaId, criteria) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).updateCriteria(validatorId, criteriaId, criteria);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').updateCriteria(validatorId, criteriaId, criteria);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -100,7 +118,7 @@ export const updateCriteria = async (validatorId, criteriaId, criteria) => {
 
 export const removeCriteria = async (validatorId, criteriaId) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).removeCriteria(validatorId, criteriaId);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').removeCriteria(validatorId, criteriaId);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -109,7 +127,7 @@ export const removeCriteria = async (validatorId, criteriaId) => {
 
 export const updateApplication = async (application) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).updateApplication(application);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').updateApplication(application);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -118,7 +136,7 @@ export const updateApplication = async (application) => {
 
 export const removeApplication = async (applicationId) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).removeApplication(applicationId);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').removeApplication(applicationId);
     } catch (error) {
         console.error(error);
         return {err: error};
