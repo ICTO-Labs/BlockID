@@ -91,15 +91,12 @@ export const shortPrincipal = (principal) => {
 };
 
 export const toSimpleArray = (array) => {
-    console.log(array);
     //Convert array to simple array, because most array from canister is array of tuple, like: [['id', [{id: 'id', name: 'name', description: 'description'}]]]
     try {
         return array.map((item) => {
-            console.log(item);
             return item[1];
         });
     } catch (e) {
-        console.log(e);
         return array;
     }
 };

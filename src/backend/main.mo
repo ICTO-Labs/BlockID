@@ -35,8 +35,8 @@ actor BlockID {
     private stable var LIMIT_VALIDATOR_PER_APPLICATION : Nat = 10;
 
     //ID generator
-    private var nextValidatorId : Nat = 0;
-    private var nextCriteriaId : Nat = 0;
+    private stable var nextValidatorId : Nat = 0;
+    private stable var nextCriteriaId : Nat = 0;
 
     //********************** System function **********************//
     system func preupgrade() {
@@ -607,7 +607,7 @@ actor BlockID {
                 validators.put(_newValidator.id, _newValidator);
                 return #ok(_newValidator);
             };
-            case (?v) { return #err("Validator ID already exists") };
+            case (?v) { return #err("Validator ID already exists: " # _validatorId) };
         };
     };
 

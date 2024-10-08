@@ -3,17 +3,31 @@ import { ref, onMounted, watch } from 'vue';
 import { removeCriteria } from '@/services/backendService';
 import VcFlow from '@/components/icons/VcFlow.vue';
 import Dialog from '@/plugins/dialog';
+import Notify from '@/plugins/notify';
 const props = defineProps(['validatorId', 'criterias']);
 const emit = defineEmits(['open-dialog', 'show-params']);
 
 const criterias = ref(props.criterias);
 
 const deleteCriteria = async (id) => {
-    if (confirm('Are you sure to delete this criteria?')) {
-        await removeCriteria(props.validatorId, id);
-        criterias.value = criterias.value.filter(
-            (criteria) => criteria.id !== id
-        );
+    const confirm = await Dialog.confirm({
+        title: 'Warning',
+        message: 'Are you sure you want to delete this criteria: ' + id + '?',
+        color: 'warning',
+        icon: 'mdi-alert'
+    });
+    if (confirm) {
+        Dialog.showLoading('Deleting criteria...');
+        let _rs = await removeCriteria(props.validatorId, id);
+        if(_rs && "ok" in _rs){
+            criterias.value = criterias.value.filter(
+                (criteria) => criteria.id !== id
+            );
+            Notify.success('Criteria deleted successfully');
+        } else {
+            Notify.error(_rs.err);
+        }
+        Dialog.closeLoading()
     }
 };
 

@@ -4,6 +4,7 @@ import { getValidators, removeValidator } from '@/services/backendService';
 import CriteriaList from './CriteriaList.vue';
 import { toSimpleArray } from '@/plugins/common';
 import Dialog from '@/plugins/dialog';
+import Notify from '@/plugins/notify';
 const props = defineProps(['applicationId', 'validators']);
 const emit = defineEmits(['open-dialog', 'show-params']);
 
@@ -14,9 +15,22 @@ const fetchValidators = async () => {
 };
 
 const deleteValidator = async (id) => {
-    if (confirm('Bạn có chắc chắn muốn xóa validator này không?')) {
-        await removeValidator(id);
-        fetchValidators();
+    const confirm = await Dialog.confirm({
+        title: 'Warning',
+        message: 'Are you sure you want to delete this validator: ' + id + '?',
+        color: 'warning',
+        icon: 'mdi-alert'
+    });
+    if (confirm) {
+        Dialog.showLoading('Deleting validator...');
+        let _rs = await removeValidator(id);
+        if(_rs && "ok" in _rs){
+            fetchValidators();
+            Notify.success('Validator deleted successfully');
+        } else {
+            Notify.error(_rs.err);
+        }
+        Dialog.closeLoading()
     }
 };
 
