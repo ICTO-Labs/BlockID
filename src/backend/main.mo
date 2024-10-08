@@ -10,6 +10,8 @@ import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
+import Char "mo:base/Char";
+import Int "mo:base/Int";
 
 import Types "Types";
 import Provider "Provider";
@@ -83,6 +85,22 @@ actor BlockID {
             case null { null };
             case (?template) { ?template };
         };
+    };
+
+    //Check if id is valid
+    private func _isValidId(id: Text) : Bool {
+        if (id.size() > 32) {
+            return false;
+        };
+        if(id.size() < 3) {
+            return false;
+        };
+        for (char in id.chars()) {
+            if (not (Char.isAlphabetic(char) or Char.isDigit(char) or char == '-' or char == '_')) {
+                return false;
+            };
+        };
+        return true;
     };
 
     //Create custom provider template
@@ -474,8 +492,12 @@ actor BlockID {
         Nat.lessOrEqual(Array.size(myApplications), LIMIT_APPLICATION_PER_USER)
     };
 
+    //Create new application
     public shared(msg) func createApplication(app: Types.Application) : async Result.Result<(), Text> {
-        //Check exist application
+        let _validId = _isValidId(app.id);
+        if(app.id == "" or _validId == false){
+            return #err("Invalid application ID: Min 3 chars, Max: 32 chars and only alphanumeric characters, include - and _ characters");
+        };
         if (not _checkLimitApplication(msg.caller)) {
             return #err("Limit application per user is reached, current limit: " # Nat.toText(LIMIT_APPLICATION_PER_USER));
         };

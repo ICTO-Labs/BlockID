@@ -17,11 +17,12 @@ const form = ref({
 });
 
 const saveApplication = async () => {
-    console.log('form.value', form.value)
     loading.value = true;
     if (props.method == 'add') {
+        //Process the id of allication, remove all special characters and space
+        form.value.id = form.value.id.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
         let _rs = await createApplication(form.value);
-        if(_rs && _rs.ok){
+        if(_rs && "ok" in _rs){
             //Notify to update application list
             props.onSave();
             Notify.success('Application created successfully');
@@ -31,7 +32,7 @@ const saveApplication = async () => {
         }
     } else {
         let _rs = await updateApplication(form.value);
-        if(_rs && _rs.ok){
+        if(_rs && "ok" in _rs){
             //Notify to update application list
             props.onSave();
             Notify.success('Application updated successfully');
@@ -54,25 +55,25 @@ onMounted(() => {
 
 <template>
     <v-card>
-      <v-card-text>
-        <v-form @submit.prevent="saveApplication">
-            <v-text-field
-                v-model="form.id"
-                label="Custom unique application ID"
-                required
-                :disabled="props.method != 'add'"
-            ></v-text-field>
-            <v-text-field
-                v-model="form.name"
-                label="Application Name"
-                required
-            ></v-text-field>
-            <v-textarea v-model="form.description" label="Description"></v-textarea>
-            <div class="d-flex justify-end pt-4">
-                <v-btn type="submit" color="primary" class="mr-2" :loading="loading">Save</v-btn>
-                <v-btn @click="closeDialog">Cancel</v-btn>
-            </div>
-        </v-form>
-      </v-card-text>
+        <v-card-text>
+            <v-form @submit.prevent="saveApplication">
+                <v-text-field
+                    v-model="form.id"
+                    label="Custom unique application ID"
+                    required
+                    :disabled="props.method != 'add'"
+                ></v-text-field>
+                <v-text-field
+                    v-model="form.name"
+                    label="Application Name"
+                    required
+                ></v-text-field>
+                <v-textarea v-model="form.description" label="Description"></v-textarea>
+                <div class="d-flex justify-end pt-4">
+                    <v-btn type="submit" color="primary" class="mr-2" :loading="loading">Save</v-btn>
+                    <v-btn @click="closeDialog">Cancel</v-btn>
+                </div>
+            </v-form>
+        </v-card-text>
     </v-card>
 </template>

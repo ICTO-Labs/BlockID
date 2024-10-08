@@ -4,19 +4,37 @@ import { getApplications, removeApplication } from '@/services/backendService';
 import ValidatorList from './ValidatorList.vue';
 import { toSimpleArray } from '@/plugins/common';
 import Dialog from '@/plugins/dialog';
+import Notify from '@/plugins/notify';
 const props = defineProps(['providers']);
 const emit = defineEmits(['open-dialog', 'show-params']);
 
 const applications = ref([]);
-
+const loading = ref(false);
 const fetchApplications = async () => {
     applications.value = toSimpleArray(await getApplications());
 };
 
 const deleteApplication = async (id) => {
-    if (confirm('Are you sure you want to delete this application?')) {
-        await removeApplication(id);
-        fetchApplications();
+    const confirm = await Dialog.confirm({
+        title: 'Warning',
+        message: 'Are you sure you want to delete this application: ' + id + '?',
+        color: 'warning',
+        icon: 'mdi-alert'
+    });
+    if (confirm) {
+        loading.value = true;
+        Dialog.showLoading('Deleting application...');
+        let _rs = await removeApplication(id);
+        if(_rs && "ok" in _rs){
+            fetchApplications();
+            Notify.success('Application deleted successfully');
+        } else {
+            Notify.error(_rs.err);
+        }
+        loading.value = false;
+        Dialog.closeLoading();
+    } else {
+        Dialog.close('confirm');
     }
 };
 const showEditDialog = (app) => {
