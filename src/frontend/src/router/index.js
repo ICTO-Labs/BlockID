@@ -8,7 +8,7 @@ const routes = [
         component: () => import('@/layouts/template/Main'),
         children: [
             {
-                path: '/',
+                path: '/:applicationId?',
                 name: 'Home',
                 component: () => import('@/views/Home')
             },

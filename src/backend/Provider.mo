@@ -19,7 +19,11 @@ module {
                         score = criteria.score;
                     };//await NFT_EXT_V1.verify(walletId, criteria.providerParams);
                     // More modules can be added here
-                    case _ return { isValid = false; score = 0 };
+                    case "autoValid" return {
+                        isValid = true;
+                        score = criteria.score;
+                    };
+                    case _ return { isValid = false; score = 1 };
                 };
             };
             case (#Remote(canisterId)) {
@@ -27,6 +31,14 @@ module {
                     verify : (Types.WalletId) -> async Types.VerificationResult;
                 };
                 return await remoteCanister.verify(walletId);
+            };
+            case (#Custom(_moduleName)) {
+                switch (_moduleName) {
+                    case _ return { isValid = false; score = 0 };
+                };
+            };
+            case _ {
+                return { isValid = false; score = 2 };
             };
         };
         // let value = await getValue(walletId, criteria);

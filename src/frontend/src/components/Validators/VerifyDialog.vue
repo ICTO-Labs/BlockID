@@ -1,132 +1,154 @@
 <script setup>
-import { ref, onMounted, watchEffect } from 'vue';
-import VerifyService from '@/services/verifyService';
-import { useWalletStore } from '@/store/walletStore';
-import { getValidator, verifyByCriteria, verifyByValidator } from '@/services/backendService';
-import { storeToRefs } from 'pinia';
-import Notify from '@/plugins/notify';
-import Dialog from '@/plugins/dialog';
-import VcFlow from '@/components/icons/VcFlow.vue';
-import { getProviderParams } from '@/plugins/vcflow';
-import { APPLICATION_ID } from '@/config';
-const props = defineProps({
-    validatorId: {
-        type: String,
-        required: true
-    }
-});
-const isLoading = ref(true);
-const walletStore = useWalletStore();
-const { principalId, accountId, balance, isConnected, shortPrincipal } =
-    storeToRefs(walletStore);
-const loading = ref(false);
-const verifyData = ref({
-    score: 0,
-    verified: false
-});
-const validator = ref(null);
-
-const startVerification = async (criteriaId=null) => {
-    if (!isConnected.value) {
-        Dialog.connectWallet();
-        return;
-    }
-    loading.value = true;
-    try {
-        Dialog.showLoading('Verifying your wallet...');
-        let _result = null;
-        switch(criteriaId) {
-            case null:
-            _result = await verifyByValidator(APPLICATION_ID, props.validatorId);
-                console.log('verifyByValidator result:', _result);
-                break;
-            default:
-            _result = await verifyByCriteria(APPLICATION_ID, props.validatorId, [criteriaId]);
-                console.log('verifyByCriteria result:', _result);
-                break;
+    import { ref, onMounted, watchEffect, computed } from 'vue';
+    import VerifyService from '@/services/verifyService';
+    import { useWalletStore } from '@/store/walletStore';
+    import { getValidator, verifyByCriteria, verifyByValidator, getVerifiedCriteria } from '@/services/backendService';
+    import { storeToRefs } from 'pinia';
+    import Notify from '@/plugins/notify';
+    import Dialog from '@/plugins/dialog';
+    import VcFlow from '@/components/icons/VcFlow.vue';
+    import { getProviderParams } from '@/plugins/vcflow';
+    const props = defineProps({
+        applicationId: {
+            type: String,
+            required: true
+        },
+        validatorId: {
+            type: String,
+            required: true
         }
-        loading.value = false;
-        Dialog.closeLoading();
-    } catch (error) {
-        Notify.warning('Verification failed: ' + error);
-    }
-};
-
-
-
-const verifyVC = async (criteria) => {
-    console.log('criteria:', criteria);
-    if (!isConnected.value) {
-        Dialog.connectWallet();
-        return;
-    }
-    if (!criteria.isVC) {
-        Notify.error(
-            'Sorry, ' + validator.value.name + ' does not support VC Flow'
-        );
-        return;
-    }
-    const providerArgs = getProviderParams(criteria.providerArgs);
-    const providerParams = getProviderParams(criteria.providerParams);
-    console.log('providerParams:', providerParams);
-    const confirm = await Dialog.confirm({
-        title: 'Confirmation',
-        message:
-            'Are you sure you want to start verification for criteria: ' +
-            criteria.name +
-            '?',
-        color: 'warning',
-        icon: 'mdi-alert'
     });
-    if (confirm) {
+    const isLoading = ref(true);
+    const verifiedCriterias = ref({});
+    const walletStore = useWalletStore();
+    const { principalId, accountId, balance, isConnected, shortPrincipal } =
+        storeToRefs(walletStore);
+    const loading = ref(false);
+    const verifyData = ref({
+        score: 0,
+        verified: false
+    });
+    const validator = ref(null);
+
+    const startVerification = async (criteriaId) => {
+        console.log('startVerification:', criteriaId);
+        if (!isConnected.value) {
+            Dialog.connectWallet();
+            return;
+        }
         loading.value = true;
         try {
-            Dialog.showLoading('Verifying your identity...');
-            let _issuerData = {
-                issuerOrigin: criteria.issuerOrigin
-            };
-            let result = await VerifyService.getCredential(
-                principalId.value,
-                providerParams,
-                providerArgs
-            );
-            console.log('getCredential result:', result);
+            Dialog.showLoading('Verifying your wallet...');
+            let _result = null;
+            switch(criteriaId) {
+                case null:
+                case undefined:
+                _result = await verifyByValidator(props.applicationId, props.validatorId);
+                    break;
+                default:
+                    _result = await verifyByCriteria(props.applicationId, props.validatorId, [criteriaId]);
+                    break;
+            }
+            if(_result && _result.ok > 0) {
+                Notify.success('Verification successful: You got ' + _result.ok + ' points from ' + validator.value.name + ' validator');
+            }
+            getVerifiedData();
             loading.value = false;
             Dialog.closeLoading();
-            if (result && result.success) {
-                Notify.success(
-                    'Verification successful: You got 12 points from DecideAI validator'
-                );
-                verifyData.value.score = 12;
-                verifyData.value.verified = true;
-            } else {
-                Notify.error(
-                    'Verification failed: You have not verified your unique personhood via DecideAI'
-                );
-            }
         } catch (error) {
             Notify.warning('Verification failed: ' + error);
-            verifyData.value.verified = true;
-        } finally {
-            loading.value = false;
-            Dialog.closeLoading();
         }
-    } else {
-        loading.value = false;
-    }
-};
-const closeDialog = () => {
-    Dialog.close('verifyDialog');
-};
-watchEffect(() => {
-    if (props.validatorId) {
-        getValidator(props.validatorId).then((response) => {
-            console.log('validator:', response);
-            validator.value = 'ok' in response ? response.ok : null;
-            isLoading.value = false;
+    };
+
+
+
+    const verifyVC = async (criteria) => {
+        console.log('criteria:', criteria);
+        if (!isConnected.value) {
+            Dialog.connectWallet();
+            return;
+        }
+        if (!criteria.isVC) {
+            Notify.error(
+                'Sorry, ' + validator.value.name + ' does not support VC Flow'
+            );
+            return;
+        }
+        const providerArgs = getProviderParams(criteria.providerArgs);
+        const providerParams = getProviderParams(criteria.providerParams);
+        console.log('providerParams:', providerParams);
+        const confirm = await Dialog.confirm({
+            title: 'Confirmation',
+            message:
+                'Are you sure you want to start verification for criteria: ' +
+                criteria.name +
+                '?',
+            color: 'warning',
+            icon: 'mdi-alert'
         });
-    }
-});
+        if (confirm) {
+            loading.value = true;
+            try {
+                Dialog.showLoading('Verifying your identity...');
+                let _issuerData = {
+                    issuerOrigin: criteria.issuerOrigin
+                };
+                let result = await VerifyService.getCredential(
+                    principalId.value,
+                    providerParams,
+                    providerArgs
+                );
+                console.log('getCredential result:', result);
+                loading.value = false;
+                Dialog.closeLoading();
+                if (result && result.success) {
+                    Notify.success(
+                        'Verification successful: You got 12 points from DecideAI validator'
+                    );
+                    verifyData.value.score = 12;
+                    verifyData.value.verified = true;
+                } else {
+                    Notify.error(
+                        'Verification failed: You have not verified your unique personhood via DecideAI'
+                    );
+                }
+            } catch (error) {
+                Notify.warning('Verification failed: ' + error);
+                verifyData.value.verified = true;
+            } finally {
+                loading.value = false;
+                Dialog.closeLoading();
+            }
+        } else {
+            loading.value = false;
+        }
+    };
+    const closeDialog = () => {
+        Dialog.close('verifyDialog');
+    };
+    const getVerifiedData = async () => {
+        loading.value = true;
+        let _data = await getVerifiedCriteria(props.applicationId, props.validatorId);
+        //Convert to object
+        verifiedCriterias.value = _data.reduce((acc, curr) => {
+            acc[curr] = true;
+            return acc;
+        }, {});
+        loading.value = false;
+        console.log('verifiedCriterias:', verifiedCriterias.value);
+    };
+
+
+    watchEffect(() => {
+        if (props.validatorId) {
+            getVerifiedData();
+            getValidator(props.validatorId).then((response) => {
+                console.log('validator:', response);
+                validator.value = 'ok' in response ? response.ok : null;
+                isLoading.value = false;
+            });
+        }
+    });
 </script>
 
 <template>
@@ -206,40 +228,57 @@ watchEffect(() => {
                             <div class="text-subtitle-1 font-weight-bold">
                                 {{ criteria.name }}
                                 <VcFlow :criteria="criteria.isVC" v-if="criteria.isVC" />
+                                
                             </div>
                         </template>
                         <template v-slot:append>
+                            <v-chip
+                                color="success"
+                                size="small"
+                                prepend-icon="mdi-check-decagram"
+                                class="font-weight-bold"
+                                v-if="verifiedCriterias[criteria.id]"
+                            >
+                                Verified (+{{ criteria.score }})
+                            </v-chip>
                             <v-chip
                                 color="warning"
                                 size="small"
                                 prepend-icon="mdi-star"
                                 class="font-weight-bold"
+                                v-else
                             >
                                 {{ criteria.score }}
                             </v-chip>
+                            
                         </template>
                         <v-card-text class="bg-white text--primary">
                             <div>
                                 {{ criteria.description }}
                             </div>
                             <div class="mt-2" v-if="criteria.score > 0">
-                                <v-btn
-                                    color="success"
-                                    size="small"
-                                    @click="verifyVC(criteria)" v-if="criteria.isVC"
-                                >
-                                    Start VC verification
-                                    <v-icon>mdi-arrow-right</v-icon>
-                                </v-btn>
+                                <div v-if="!verifiedCriterias[criteria.id]">
+                                    <v-btn
+                                        color="success"
+                                        size="small"
+                                        @click="verifyVC(criteria)" v-if="criteria.isVC"
+                                        :loading="loading"
+                                    >
+                                        Start VC verification
+                                        <v-icon>mdi-arrow-right</v-icon>
+                                    </v-btn>
 
-                                <v-btn
-                                    color="primary"
-                                    size="small"
-                                    @click="startVerification(criteria.id)" v-else
-                                >
-                                    Start verification
-                                    <v-icon>mdi-arrow-right</v-icon>
-                                </v-btn>
+                                    <v-btn
+                                        color="primary"
+                                        size="small"
+                                        @click="startVerification(criteria.id)" v-else
+                                        :loading="loading"
+                                    >
+                                        Start verification
+                                        <v-icon>mdi-arrow-right</v-icon>
+                                    </v-btn>
+                                </div>
+                                
                             </div>
                         </v-card-text>
                     </v-card>
@@ -249,10 +288,10 @@ watchEffect(() => {
 
         <v-divider></v-divider>
         <v-card-actions>
+            <v-btn color="success" @click="startVerification()" :loading="loading" variant="flat">
+                <v-icon>mdi-check-circle</v-icon> Verify this validator
+            </v-btn>
             <v-btn text="Cancel" variant="plain" @click="closeDialog"></v-btn>
-            <!-- <v-btn color="primary" @click="startVerification" :loading="loading" variant="tonal">
-                Start verification
-            </v-btn> -->
         </v-card-actions>
     </v-card>
 </template>

@@ -4,6 +4,12 @@ import { useWalletStore } from '@/store/walletStore';
 import { storeToRefs } from 'pinia';
 import { getCurrentWalletScore } from '@/services/backendService';
 import { config } from '@/config';
+const props = defineProps({
+    applicationId: {
+        type: String,
+        required: true
+    }
+});
 const walletStore = useWalletStore();
 const { principalId, accountId, balance, isConnected, shortPrincipal } =
     storeToRefs(walletStore);
@@ -13,7 +19,7 @@ const getScore = async ()=>{
     loading.value = true;
     walletScore.value = await getCurrentWalletScore(
         principalId.value,
-        config.applicationId
+        props.applicationId
     );
     loading.value = false;
 }
@@ -27,7 +33,7 @@ const refreshScore = async () => {
     loading.value = true;
     walletScore.value = await getCurrentWalletScore(
         principalId.value,
-        config.applicationId
+        props.applicationId
     );
     loading.value = false;
 };
@@ -36,7 +42,7 @@ const refreshScore = async () => {
     <!-- Wallet Information Section -->
     <v-row class="mb-6">
         <v-col cols="12" md="5">
-            <v-card color="primary" dark height="100%">
+            <v-card color="primary" dark height="100%" :style="{ background: 'linear-gradient(to right, #1e88e5, #ff758c)' }">
                 <template v-slot:title>
                     <span class="font-weight-black">Your Score</span>
                     <v-btn
@@ -68,7 +74,7 @@ const refreshScore = async () => {
                                 max-height="64"
                             ></v-skeleton-loader>
                             <div class="text-subtitle-2">
-                                Higher than 90% of verified wallets
+                                Higher than 90% of verified wallets at {{ applicationId }}
                             </div>
                         </v-card-item>
                     </template>

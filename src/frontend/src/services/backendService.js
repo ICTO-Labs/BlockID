@@ -3,9 +3,18 @@ import { Principal } from '@dfinity/principal';
 import { BACKEND_CANISTER_ID, APPLICATION_ID } from '@/config';
 import Connect from "@/actor/Connect";
 
+export const getVerifiedCriteria = async (applicationId, validatorId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getVerifiedCriteria(applicationId, validatorId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
 export const verifyByCriteria = async (applicationId, validatorId, criteriaIds) => {
     try {
-        return await Backend.verifyWalletByCriteria(applicationId, validatorId, criteriaIds);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').verifyWalletByCriteria(applicationId, validatorId, criteriaIds);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -14,9 +23,9 @@ export const verifyByCriteria = async (applicationId, validatorId, criteriaIds) 
 
 export const verifyByValidator = async (applicationId, validatorId) => {
     try {
-        return await Backend.verifyWalletByValidator(applicationId, validatorId);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').verifyWalletByValidator(applicationId, validatorId);
     } catch (error) {
-        console.error(error);
+        console.error("verifyByValidator:", error);
         return {err: error};
     }
 };
@@ -29,7 +38,14 @@ export const getWallets = async () => {
         return [];
     }
 };
-
+export const getApplication = async (applicationId = APPLICATION_ID) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getApplication(applicationId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
 export const getApplications = async () => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getApplications();

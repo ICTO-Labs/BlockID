@@ -1,7 +1,7 @@
 <template>
     <v-chip
         class="ms-2 ma-0"
-        color="success"
+        color="warning"
         size="small"
         variant="outlined"
         prepend-icon="mdi-check-decagram"

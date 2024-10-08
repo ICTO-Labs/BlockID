@@ -6,7 +6,7 @@ export const FRONTEND_CANISTER_ID = IS_DEV ? 'cgpjn-omaaa-aaaaa-qaakq-cai' : '3f
 export const VC_VALIDATOR_CANISTER_ID = IS_DEV ? 'cpmcr-yeaaa-aaaaa-qaala-cai' : 'uspxb-mqaaa-aaaap-qhxqq-cai';
 console.log('IS_DEV', IS_DEV, END_POINT);
 
-const FRONTEND_DOMAIN = `https://blockid.cc`;
+export const FRONTEND_DOMAIN = `https://blockid.cc`;
 export const APPLICATION_ID = 'block-id';
 export const WALLETS = {
     'INTERNET_IDENTITY': {

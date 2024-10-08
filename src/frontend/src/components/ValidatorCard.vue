@@ -5,10 +5,14 @@ const props = defineProps({
     validator: {
         type: Object,
         required: true
+    },
+    applicationId: {
+        type: String,
+        required: true
     }
 });
 const showVerifyDialog = async (validatorId) => {
-    await Dialog.showVerify(validatorId);
+    await Dialog.showVerify(props.applicationId, validatorId);
 };
 </script>
 

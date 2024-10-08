@@ -2,11 +2,12 @@ import icIDL from '@/actor/did/ic.did';
 import icrc1IDL from '@/actor/did/icrc1.did';
 
 import {idlFactory as backendIDL} from '@/../../declarations/backend';
-
+import {idlFactory as validateIDL} from '@/../../declarations/validate';
 export const preloadIdls = {
     'IC': icIDL,
     'icrc1' : icrc1IDL,
     'backend': backendIDL,
+    'validate': validateIDL,
 }
 export const mapIdls = {
     'aaaaa-aa' : icIDL,

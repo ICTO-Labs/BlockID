@@ -310,21 +310,26 @@ actor BlockID {
     //Verify single criteria
     private func _verifySingleCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider) : async Types.CriteriaScore {
         let now = Time.now();
-        if (criteria.isVC == false and provider.id != "") {
+        let _defaultScore = {
+            criteriaId = criteria.id;
+            score = 0;
+            verified = false;
+            verificationTime = null;
+        };
+        if (criteria.isVC == false and provider.id != "-") {
             let result = await Provider.verifyCriteria(walletId, criteria, provider);
-            {
-                criteriaId = criteria.id;
-                score = if (result.isValid) criteria.score else 0;
-                verified = result.isValid;
-                verificationTime = ?now;
+            if(result.isValid == true){
+                {
+                    criteriaId = criteria.id;
+                    score = result.score;
+                    verified = result.isValid;
+                    verificationTime = ?now;
+                }
+            }else{
+                _defaultScore;
             }
         } else {
-            {
-                criteriaId = criteria.id;
-                score = 0;
-                verified = false;
-                verificationTime = null;
-            }
+            _defaultScore;
         }
     };
 
@@ -388,9 +393,9 @@ actor BlockID {
                         case null { /* Skip if criteria not found */ };
                         case (?criteria) {
                             //Check provider, skip if not exist
-                            let provider = switch (providers.get(Option.get(criteria.providerId, ""))) {
+                            let provider = switch (providers.get(Option.get(criteria.providerId, "-"))) {
                                 case null { {
-                                    id = "";
+                                    id = "-";
                                     name = "";
                                     description = "";
                                     moduleType = #Custom;
@@ -400,7 +405,10 @@ actor BlockID {
                                 case (?p) { p };
                             };
                             let criteriaScore = await _verifySingleCriteria(walletId, criteria, provider);
-                            criteriaScores := Array.append(criteriaScores, [criteriaScore]);
+                            //Only add verified criteria
+                            if(criteriaScore.verified == true and criteriaScore.score > 0){
+                                criteriaScores := Array.append(criteriaScores, [criteriaScore]);
+                            };
                         };
                     };
                 };
@@ -452,6 +460,31 @@ actor BlockID {
         totalScore
     };
 
+    //Get verified criteria by validator, return list criteria id
+    public shared ({caller}) func getVerifiedCriteria(applicationId: Types.ApplicationId, validatorId: Types.ValidatorId) : async [Types.CriteriaId] {
+        switch (wallets.get(caller)) {
+            case null { return [] };
+            case (?wallet) {
+                var verifiedCriteria : [Types.CriteriaId] = [];
+                for (score in wallet.applicationScores.vals()) {
+                    if (score.applicationId == applicationId) {
+                        for (validatorScore in score.validatorScores.vals()) {
+                            if (validatorScore.validatorId == validatorId) {    
+                                for (criteriaScore in validatorScore.criteriaScores.vals()) {
+                                    if (criteriaScore.verified == true) {
+                                        verifiedCriteria := Array.append(verifiedCriteria, [criteriaScore.criteriaId]);
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+                verifiedCriteria;
+            };
+        };
+    };
+
+    //Get wallet score
     public query func getWalletScore(walletId: Types.WalletId, applicationId: Text) : async {
         totalScore: Nat;
         validScores: [Types.WalletScore];
@@ -660,6 +693,14 @@ actor BlockID {
                 app.owner == caller
             });
             return myApplications;
+        };
+    };
+
+    //Get application info
+    public query func getApplication(appId: Text) : async Result.Result<Types.Application, Text> {
+        switch (applications.get(appId)) {
+            case null { #err("Application not found") };
+            case (?app) { #ok(app) };
         };
     };
 

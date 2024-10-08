@@ -53,11 +53,12 @@ const Dialog = {
         const dialogStore = useDialogStore();
         dialogStore.closeDialog('loadingDialog');
     },
-    showVerify(validatorId) {
+    showVerify(applicationId, validatorId) {
         const dialogStore = useDialogStore();
         return new Promise((resolve) => {
             dialogStore.openDialog('verifyDialog', {
                 validatorId,
+                applicationId,
                 maxWidth: 700,
                 onClose: () => {
                     dialogStore.closeDialog('verifyDialog');
