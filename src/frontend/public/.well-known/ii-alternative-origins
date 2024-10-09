@@ -1,6 +1,8 @@
 {
     "alternativeOrigins": [
-        "https://blockid.cc", 
-        "https://3f66t-ryaaa-aaaap-qhriq-cai.icp0.io"
+        "http://localhost:3000",
+        "https://icto.app",
+        "https://beta.icto.app",
+        "https://y3yam-6aaaa-aaaap-qb7aq-cai.icp0.io"
     ]
 }

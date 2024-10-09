@@ -1,4 +1,5 @@
 export const IS_DEV = import.meta.env.DEV;
+export const DEVRIVATION_ORIGIN = IS_DEV ? 'http://localhost:8000' : 'https://y3yam-6aaaa-aaaap-qb7aq-cai.icp0.io';
 export const END_POINT = IS_DEV ? 'http://localhost:4943' : 'https://icp0.io';
 export const INTERNET_INDENTITY = IS_DEV ? 'https://identity.ic0.app' : 'https://identity.ic0.app';
 export const BACKEND_CANISTER_ID = IS_DEV ? 'cbopz-duaaa-aaaaa-qaaka-cai' : '3c7yh-4aaaa-aaaap-qhria-cai';

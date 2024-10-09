@@ -1,11 +1,15 @@
 import { AuthClient } from '@dfinity/auth-client';
 import { principalToAccountId } from '@/plugins/common';
-import { END_POINT, INTERNET_INDENTITY } from '@/config';
+import { END_POINT, INTERNET_INDENTITY, DEVRIVATION_ORIGIN } from '@/config';
 const defaultOptions = {
     createOptions: {
         idleOptions: {
             disableIdle: true
-        }
+        },
+        derivationOrigin: DEVRIVATION_ORIGIN,
+    },
+    loginOptions: {
+        derivationOrigin: DEVRIVATION_ORIGIN,
     }
 };
 
