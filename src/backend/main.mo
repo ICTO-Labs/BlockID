@@ -461,8 +461,8 @@ actor BlockID {
     };
 
     //Get verified criteria by validator, return list criteria id
-    public shared ({caller}) func getVerifiedCriteria(applicationId: Types.ApplicationId, validatorId: Types.ValidatorId) : async [Types.CriteriaId] {
-        switch (wallets.get(caller)) {
+    public query func getVerifiedCriteria(applicationId: Types.ApplicationId, validatorId: Types.ValidatorId, walletId: Types.WalletId) : async [Types.CriteriaId] {
+        switch (wallets.get(walletId)) {
             case null { return [] };
             case (?wallet) {
                 var verifiedCriteria : [Types.CriteriaId] = [];

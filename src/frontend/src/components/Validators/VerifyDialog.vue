@@ -1,5 +1,6 @@
 <script setup>
     import { ref, onMounted, watchEffect, computed } from 'vue';
+    import { Principal } from '@dfinity/principal';
     import VerifyService from '@/services/verifyService';
     import { useWalletStore } from '@/store/walletStore';
     import { getValidator, verifyByCriteria, verifyByValidator, getVerifiedCriteria } from '@/services/backendService';
@@ -51,6 +52,8 @@
             }
             if(_result && _result.ok > 0) {
                 Notify.success('Verification successful: You got ' + _result.ok + ' points from ' + validator.value.name + ' validator');
+            }else{
+                Notify.error('Verification failed: Please try again');
             }
             getVerifiedData();
             loading.value = false;
@@ -128,14 +131,13 @@
     };
     const getVerifiedData = async () => {
         loading.value = true;
-        let _data = await getVerifiedCriteria(props.applicationId, props.validatorId);
+        let _data = await getVerifiedCriteria(props.applicationId, props.validatorId, Principal.fromText(principalId.value));
         //Convert to object
         verifiedCriterias.value = _data.reduce((acc, curr) => {
             acc[curr] = true;
             return acc;
         }, {});
         loading.value = false;
-        console.log('verifiedCriterias:', verifiedCriterias.value);
     };
 
 

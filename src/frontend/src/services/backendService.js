@@ -3,9 +3,9 @@ import { Principal } from '@dfinity/principal';
 import { BACKEND_CANISTER_ID, APPLICATION_ID } from '@/config';
 import Connect from "@/actor/Connect";
 
-export const getVerifiedCriteria = async (applicationId, validatorId) => {
+export const getVerifiedCriteria = async (applicationId, validatorId, walletId) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getVerifiedCriteria(applicationId, validatorId);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getVerifiedCriteria(applicationId, validatorId, walletId);
     } catch (error) {
         console.error(error);
         return {err: error};
