@@ -96,23 +96,31 @@
                 let _issuerData = {
                     issuerOrigin: criteria.issuerOrigin
                 };
+                let _validateData = {
+                    application_id: props.applicationId,
+                    validator_id: props.validatorId,
+                    criterial_id: criteria.id,
+                    wallet_id: principalId.value
+                }
+                console.log('validateData:', _validateData);
                 let result = await VerifyService.getCredential(
                     principalId.value,
                     providerParams,
-                    providerArgs
+                    providerArgs,
+                    _validateData
                 );
                 console.log('getCredential result:', result);
                 loading.value = false;
                 Dialog.closeLoading();
                 if (result && result.success) {
                     Notify.success(
-                        'Verification successful: You got 12 points from DecideAI validator'
+                        'Verification successful: You got '+criteria.score+' points from '+validator.value.name+' validator'
                     );
-                    verifyData.value.score = 12;
+                    verifyData.value.score = criteria.score;
                     verifyData.value.verified = true;
                 } else {
                     Notify.error(
-                        'Verification failed: You have not verified your unique personhood via DecideAI'
+                        'Verification failed: The validator returned an error, please try again later!'
                     );
                 }
             } catch (error) {
@@ -156,9 +164,8 @@
 <template>
     <v-card v-if="isLoading">
         <v-skeleton-loader
-            class="mx-auto"
+            class="mx-auto w-100"
             elevation="12"
-            max-width="600"
             type="table-heading, list-item-two-line, image, table-tfoot"
         ></v-skeleton-loader>
     </v-card>
@@ -259,14 +266,15 @@
                                 {{ criteria.description }}
                             </div>
                             <div class="mt-2" v-if="criteria.score > 0">
-                                <div v-if="!verifiedCriterias[criteria.id]">
+                                <div>
                                     <v-btn
                                         color="success"
                                         size="small"
                                         @click="verifyVC(criteria)" v-if="criteria.isVC"
                                         :loading="loading"
                                     >
-                                        Start VC verification
+                                        <v-chip variant="text" v-if="verifiedCriterias[criteria.id]">Re-verify</v-chip>
+                                        <v-chip variant="text" v-else>Start VC verification</v-chip>
                                         <v-icon>mdi-arrow-right</v-icon>
                                     </v-btn>
 
@@ -276,7 +284,8 @@
                                         @click="startVerification(criteria.id)" v-else
                                         :loading="loading"
                                     >
-                                        Start verification
+                                        <v-chip variant="text" v-if="verifiedCriterias[criteria.id]">Re-verify</v-chip>
+                                        <v-chip variant="text" v-else>Start verification</v-chip>
                                         <v-icon>mdi-arrow-right</v-icon>
                                     </v-btn>
                                 </div>

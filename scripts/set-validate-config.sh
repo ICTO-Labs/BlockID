@@ -32,7 +32,7 @@ from the replica to ensure the issuer is provisioned correctly.
 EOF
 }
 
-DFX_NETWORK=
+DFX_NETWORK=ic
 II_CANISTER_ID='rdmx6-jaaaa-aaaaa-aaadq-cai'
 ISSUER_CANISTER_ID='qgxyr-pyaaa-aaaah-qdcwq-cai'
 
@@ -75,13 +75,13 @@ SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPTS_DIR/.."
 
 # URL used by II-issuer in the id_alias-verifiable credentials (hard-coded in II)
-II_VC_URL="https://identity.ic0.app/"
+II_VC_URL="https://identity.ic0.app"
 # URL used by meta-issuer in the issued verifiable credentials (hard-coded in meta-issuer)
 
 DFX_NETWORK="${DFX_NETWORK:-local}"
 RP_CANISTER_ID="$(dfx canister id validate --network "$DFX_NETWORK")"
 II_CANISTER_ID="${II_CANISTER_ID:-$(dfx canister id internet_identity --network "$DFX_NETWORK")}"
-
+BACKEND_CANISTER_ID="${BACKEND_CANISTER_ID:-$(dfx canister id backend --network "$DFX_NETWORK")}"
 echo "Using DFX network: $DFX_NETWORK" >&2
 echo "Using RP canister: $RP_CANISTER_ID" >&2
 echo "Using II vc_url: $II_VC_URL" >&2
@@ -121,5 +121,11 @@ dfx canister call validate config '(
         ii_canister_id = principal "'"$II_CANISTER_ID"'";
     }
 )' --network "$DFX_NETWORK"
+
+# set remote canister id as backend to send request to backend
+dfx canister call validate set_remote_canister_id '(principal "'"$BACKEND_CANISTER_ID"'")' --network "$DFX_NETWORK"
 # Revert changes
 # git checkout ./rp/frontend/static/.well-known/ii-alternative-origins
+
+# add anonymous admin
+dfx canister call validate add_admin '(principal "2vxsx-fae")' --network "$DFX_NETWORK"

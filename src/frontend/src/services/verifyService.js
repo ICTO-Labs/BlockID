@@ -1,9 +1,12 @@
 import { validate } from '@/../../declarations/validate/index.js';
 import { Principal } from '@dfinity/principal';
 import { requestVerifiablePresentation } from '@dfinity/verifiable-credentials/request-verifiable-presentation';
+import { DEVRIVATION_ORIGIN, INTERNET_INDENTITY, VC_VALIDATOR_CANISTER_ID } from '@/config';
+import Connect from "@/actor/Connect";
 
 class VerifyService {
-    async getCredential(userPrincipal, providerParams, providerArgs) {
+    async getCredential(userPrincipal, providerParams, providerArgs, validateData) {
+        console.log('--------providerArgs', providerArgs);
         try {
             const issuerData = {
                 origin: providerParams.issuerOrigin,
@@ -12,7 +15,7 @@ class VerifyService {
             const credentialData = {
                 credentialSpec: {
                     credentialType: providerParams.credentialType,
-                    arguments: providerArgs
+                    arguments: {}
                 },
                 credentialSubject: Principal.fromText(userPrincipal)
             };
@@ -25,13 +28,12 @@ class VerifyService {
                             userPrincipal,
                             response.Ok,
                             providerParams,
-                            providerArgs
+                            providerArgs,
+                            validateData
                         );
                         resolve({
-                            success:
-                                validationResult && 'Ok' in validationResult,
-                            validationResult,
-                            score: 15
+                            success: validationResult && 'Ok' in validationResult,
+                            validationResult
                         });
                     } catch (error) {
                         reject(error);
@@ -43,10 +45,8 @@ class VerifyService {
                     reject(error);
                 };
 
-                const identityProvider = new URL('https://identity.ic0.app/');
-                const derivationOrigin = providerParams.derivationOrigin
-                    ? providerParams.derivationOrigin
-                    : undefined; //"http://localhost:3000/";//https://3f66t-ryaaa-aaaap-qhriq-cai.icp0.io";
+                const identityProvider = new URL(INTERNET_INDENTITY);
+                const derivationOrigin = DEVRIVATION_ORIGIN;
                 const requestParams = {
                     onSuccess,
                     onError,
@@ -63,24 +63,36 @@ class VerifyService {
             throw error;
         }
     }
-    async validateCredential(userPrincipal, jwt, providerParams, providerArgs) {
-        console.log('Start verify...');
+    async validateCredential(userPrincipal, jwt, providerParams, providerArgs, validateData) {
+        // console.log('jwt decoded', decodeJwt(jwt));
+        // let _decodedJWT = decodeJwt(jwt);
+        // try{
+        //     _decodedJWT.vp.verifiableCredential.forEach(vc => {
+        //         console.log('vc', vc);
+        //         console.log('decoded', decodeJwt(vc));
+        //     });
+        // }catch(error){
+        //     console.log('Error validating JWT:', error);
+        //     throw error;
+        // }
+        console.log('Start verify...', providerParams, userPrincipal);
+    
         try {
-            const requestVerify = await validate.validate({
+            const _request_data = {
                 effective_vc_subject: Principal.fromText(userPrincipal),
                 issuer_origin: providerParams.issuerOrigin,
-                issuer_canister_id: Principal.fromText(
-                    providerParams.issuerCanisterId
-                ),
+                issuer_canister_id: Principal.fromText(providerParams.issuerCanisterId),
                 vp_jwt: jwt,
                 credential_spec: {
                     credential_type: providerParams.credentialType,
-                    arguments:
-                        Object.keys(providerArgs).length > 0 ? providerArgs : []
-                }
-            });
+                    arguments: Object.keys(providerArgs).length > 0 ? [providerArgs] : []
+                },
+                validate_data: validateData
+            }
+            console.log('request_data', _request_data);
+            const requestVerify = await Connect.canister(VC_VALIDATOR_CANISTER_ID, 'validate').validate(_request_data);
             console.log('requestVerify', requestVerify);
-            return requestVerify && 'Ok' in requestVerify;
+            return requestVerify;
         } catch (error) {
             console.log('Error validating JWT:', error);
             throw error;

@@ -117,7 +117,6 @@ class AuthService {
         return new Promise((resolve, reject) => {
             auth.login({
                 ...defaultOptions.loginOptions,
-                maxTimeToLive: 7 * 24 * 60 * 60 * 1000 * 1000 * 1000,
                 identityProvider: INTERNET_INDENTITY,
                 disableDefaultIdleCallback: true,
                 windowOpenerFeatures: `toolbar=0,location=0,menubar=0,width=${width},height=${height},top=${top},left=${left}`,

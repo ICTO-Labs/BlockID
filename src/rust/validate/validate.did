@@ -8,11 +8,13 @@ type IssuerInfo = record {
   issuer_origin : text;
 };
 type Result = variant { Ok; Err : text };
+type Result_1 = variant { Ok : SimpleConfigInfo; Err : text };
 type RpInit = record {
   ii_canister_id : principal;
   ic_root_key_der : blob;
   ii_vc_url : text;
 };
+type SimpleConfigInfo = record { ii_canister_id : principal; ii_origin : text };
 type ValidateData = record {
   criterial_id : text;
   validator_id : text;
@@ -34,6 +36,7 @@ service : (opt RpInit) -> {
   get_admins : () -> (vec principal) query;
   get_issuers : () -> (vec record { principal; IssuerInfo }) query;
   get_remote_canister_id : () -> (opt principal) query;
+  get_simple_config_info : () -> (Result_1) query;
   remove_admin : (principal) -> (Result);
   remove_issuer : (principal) -> (Result);
   set_remote_canister_id : (principal) -> (Result);

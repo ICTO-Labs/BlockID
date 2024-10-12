@@ -11,7 +11,7 @@ use canister_sig_util::extract_raw_root_pk_from_der;
 use vc_util::issuer_api::CredentialSpec;
 use vc_util::{validate_ii_presentation_and_claims, VcFlowSigners};
 
-#[derive(CandidType, Deserialize, Clone)]
+#[derive(CandidType, Deserialize, Clone, Debug)]
 struct IssuerInfo {
     issuer_origin: String,
     credential_specs: Vec<CredentialSpec>,
@@ -77,7 +77,11 @@ pub struct RpInit {
 }
 
 fn normalize_url(url: &str) -> Result<String, url::ParseError> {
-    let parsed_url = Url::parse(url)?;
+    let mut parsed_url = Url::parse(url)?;
+    // Ensure that the path starts with '/'
+    if parsed_url.path().is_empty() {
+        parsed_url.set_path("/");
+    }
     Ok(parsed_url.to_string())
 }
 
@@ -92,8 +96,7 @@ fn config(init_arg: RpInit) -> Result<(), String> {
     let config = RpConfig {
         ic_root_key_raw: extract_raw_root_pk_from_der(&init_arg.ic_root_key_der)
             .expect("failed to extract raw root pk from der"),
-        ii_origin: normalize_url(&init_arg.ii_vc_url)
-            .map_err(|e| format!("Invalid II URL: {}", e))?,
+        ii_origin: normalize_url(&init_arg.ii_vc_url).map_err(|e| format!("Invalid II URL: {}", e))?,
         ii_canister_id: init_arg.ii_canister_id,
         issuers: BTreeMap::new(),
         admins: {
@@ -106,6 +109,24 @@ fn config(init_arg: RpInit) -> Result<(), String> {
     CONFIG.with(|cfg| *cfg.borrow_mut() = config);
     Ok(())
 }
+
+#[derive(CandidType, Deserialize, Clone)]
+struct SimpleConfigInfo {
+    ii_origin: String,
+    ii_canister_id: Principal,
+}
+#[query]
+#[candid_method(query)]
+fn get_simple_config_info() -> Result<SimpleConfigInfo, String> {
+    CONFIG.with(|config| {
+        let config = config.borrow();
+        Ok(SimpleConfigInfo {
+            ii_origin: config.ii_origin.clone(),
+            ii_canister_id: config.ii_canister_id,
+        })
+    })
+}
+
 #[update]
 #[candid_method(update)]
 fn set_remote_canister_id(canister_id: Principal) -> Result<(), String> {
@@ -138,7 +159,7 @@ fn init(init_arg: Option<RpInit>) {
 async fn validate(mut req: ValidateVpRequest) -> Result<(), String> {
     req.issuer_origin = normalize_url(&req.issuer_origin)
         .map_err(|e| format!("Invalid issuer origin: {}", e))?;
-
+    
     let (ic_root_key_raw, vc_flow_signers) = CONFIG.with(|config| {
         let config = config.borrow();
         let Some(issuer_info) = config.issuers.get(&req.issuer_canister_id) else {
@@ -147,7 +168,6 @@ async fn validate(mut req: ValidateVpRequest) -> Result<(), String> {
                 req.issuer_canister_id
             ));
         };
-        
         if issuer_info.issuer_origin != req.issuer_origin {
             return Err(format!(
                 "mismatched issuer origin: expected {}, got {}",
@@ -156,11 +176,11 @@ async fn validate(mut req: ValidateVpRequest) -> Result<(), String> {
         }
         
         if !issuer_info.credential_specs.contains(&req.credential_spec) {
-            return Err(format!("unsupported credential spec for issuer: {}",
-                req.issuer_origin
+            return Err(format!("unsupported credential spec for issuer: {}, {:#?}",
+                req.issuer_origin, req.credential_spec
             ));
         }
-        
+
         Ok((
             config.ic_root_key_raw.clone(),
             VcFlowSigners {
@@ -182,7 +202,6 @@ async fn validate(mut req: ValidateVpRequest) -> Result<(), String> {
     ) {
         Ok(()) => {
             // Validate success, call call_remote_canister
-            // return Ok(());
             let mut validate_data = req.validate_data;
             validate_data.wallet_id = req.effective_vc_subject.to_string();
             let _rs = call_remote_canister(validate_data).await;
@@ -190,22 +209,13 @@ async fn validate(mut req: ValidateVpRequest) -> Result<(), String> {
                 Ok(()) => Ok(()),
                 Err(msg) => Err(msg),
             }
-            // let encoded_data = candid::encode_one(validate_data)
-            //     .map_err(|e| ContentError::NotAuthorized(format!("Error encoding validation data: {}", e)))?;
-
-            // let result = call_remote_canister("validateVC".to_string(), encoded_data).await
-            //     .map_err(|e| ContentError::NotAuthorized(format!("Error calling remote canister: {}", e)))?;
-
-            // match result {
-            //     RemoteCallResponse::ok(true) => Ok(()),
-            //     RemoteCallResponse::ok(false) => Err(ContentError::NotAuthorized("Error validate VC from remote canister".to_string())),
-            //     RemoteCallResponse::err(e) => Err(ContentError::NotAuthorized(format!("Error remote canister: {}", e))),
-            // }
         },
-        Err(err) => Err(format!(
-            "VP validation error: {:?}",
-            err
-        )),
+        Err(err) => {
+            Err(format!(
+                "VP validation error: {:?}",
+                err
+            ))
+        },
     }
 }
 

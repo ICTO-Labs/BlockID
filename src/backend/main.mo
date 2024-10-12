@@ -730,4 +730,20 @@ actor BlockID {
     public query func getAdmins() : async [Text] {
         _admins
     };
+    //Add admin
+    public shared(msg) func addAdmin(admin: Text) : async Result.Result<(), Text> {
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return #err("Not authorized");
+        };
+        _admins := Array.append(_admins, [admin]);
+        return #ok(());
+    };
+    //Remove admin
+    public shared(msg) func removeAdmin(admin: Text) : async Result.Result<(), Text> {
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return #err("Not authorized");
+        };
+        _admins := Array.filter(_admins, func (a: Text) : Bool { a != admin });
+        return #ok(());
+    };
 }
