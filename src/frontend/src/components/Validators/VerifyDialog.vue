@@ -275,7 +275,7 @@
                             </v-chip>
                             
                         </template>
-                        <v-card-text class="bg-white text--primary">
+                        <v-card-text class="text--primary">
                             <div>
                                 {{ criteria.description }}
                             </div>

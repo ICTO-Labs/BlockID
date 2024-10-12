@@ -1,5 +1,5 @@
 <script setup>
-    import { ref, watchEffect } from 'vue';
+    import { ref, watch, watchEffect } from 'vue';
     import Dialog from '@/plugins/dialog';
     import { getVerifiedCriteria } from '@/services/backendService';
     import { storeToRefs } from 'pinia';
@@ -8,7 +8,7 @@
 
     const walletStore = useWalletStore();
 
-    const { principalId } = storeToRefs(walletStore);
+    const { principalId, score } = storeToRefs(walletStore);
 
     const props = defineProps({
         validator: {
@@ -25,7 +25,10 @@
         await Dialog.showVerify(props.applicationId, validatorId);
     };
     const getVerifiedData = async () => {
-        if(!principalId.value) return;
+        if(!principalId.value){
+            pointsGained.value = 0;
+            return;
+        }
         let _data = await getVerifiedCriteria(props.applicationId, props.validator.id, Principal.fromText(principalId.value));
         if(_data && _data.length > 0) {
             //count total score
@@ -33,7 +36,7 @@
         }
     };
     watchEffect(() => {
-        if(props.validator.id) {
+        if(props.applicationId || principalId.value || score.value) {
             getVerifiedData();
         }
     });

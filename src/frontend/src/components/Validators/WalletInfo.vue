@@ -15,6 +15,7 @@ const { principalId, accountId, balance, isConnected, score, currentWallet } = s
 const walletScore = ref(0);
 const loading = ref(false);
 const getScore = async ()=>{
+    if(!isConnected.value) return;
     walletStore.getUserScore(props.applicationId);
 }
 watchEffect(async () => {
