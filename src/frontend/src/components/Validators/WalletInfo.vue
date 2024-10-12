@@ -11,17 +11,11 @@ const props = defineProps({
     }
 });
 const walletStore = useWalletStore();
-const { principalId, accountId, balance, isConnected, shortPrincipal } =
-    storeToRefs(walletStore);
+const { principalId, accountId, balance, isConnected, score, currentWallet } = storeToRefs(walletStore);
 const walletScore = ref(0);
 const loading = ref(false);
 const getScore = async ()=>{
-    loading.value = true;
-    walletScore.value = await getCurrentWalletScore(
-        principalId.value,
-        props.applicationId
-    );
-    loading.value = false;
+    walletStore.getUserScore(props.applicationId);
 }
 watchEffect(async () => {
     if (isConnected.value) {
@@ -65,7 +59,7 @@ const refreshScore = async () => {
                     <template v-slot:prepend>
                         <v-card-item>
                             <div class="text-h2 mb-2 text-orange font-weight-bold" >
-                                {{ walletScore || 0 }}
+                                {{ score || 0 }}
                             </div>
                             <v-skeleton-loader
                                 v-if="loading"
@@ -79,9 +73,9 @@ const refreshScore = async () => {
                         </v-card-item>
                     </template>
                     <template v-slot:append>
-                        <v-avatar size="64">
+                        <v-avatar size="110">
                             <v-img
-                                src="https://nns.ic0.app/_app/immutable/assets/icp-rounded.0be14f6b.svg"
+                                src="/images/logo_icp_trans.png"
                             ></v-img>
                         </v-avatar>
                     </template>
@@ -90,7 +84,7 @@ const refreshScore = async () => {
         </v-col>
         <v-col cols="12" md="7">
             <v-card height="100%">
-                <v-card-title>Wallet Information</v-card-title>
+                <v-card-title>Wallet Information <v-chip label variant="flat" color="primary" size="small">{{ currentWallet }}</v-chip></v-card-title>
                 <v-card-text>
                     <v-list>
                         <v-list-item>
@@ -98,21 +92,10 @@ const refreshScore = async () => {
                                 <v-col>
                                     <v-list-item>
                                         <v-list-item-title
-                                            >Principal</v-list-item-title
+                                            >Principal ID</v-list-item-title
                                         >
                                         <v-list-item-subtitle>{{
                                             principalId || '---'
-                                        }}</v-list-item-subtitle>
-                                    </v-list-item>
-                                </v-col>
-
-                                <v-col>
-                                    <v-list-item>
-                                        <v-list-item-title
-                                            >Account Id</v-list-item-title
-                                        >
-                                        <v-list-item-subtitle>{{
-                                            accountId || '---'
                                         }}</v-list-item-subtitle>
                                     </v-list-item>
                                 </v-col>
@@ -120,12 +103,12 @@ const refreshScore = async () => {
                         </v-list-item>
                         <v-list-item>
                             <v-list-item>
-                                <v-list-item-title>Balance</v-list-item-title>
+                                <v-list-item-title>Account ID</v-list-item-title>
                                 <v-list-item-subtitle
                                     >{{
-                                        balance || '---'
+                                        accountId || '---'
                                     }}
-                                    ICP</v-list-item-subtitle
+                                    </v-list-item-subtitle
                                 >
                             </v-list-item>
                         </v-list-item>

@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 import authService from '@/services/authService';
+import { getCurrentWalletScore } from '@/services/backendService';
+
 export const useWalletStore = defineStore('wallet', {
     state: () => ({
         principalId: null,
@@ -45,6 +47,11 @@ export const useWalletStore = defineStore('wallet', {
         updateScore(newScore) {
             this.score = newScore;
             this.saveToLocalStorage();
+        },
+        async getUserScore(applicationId) {
+            let _score = await getCurrentWalletScore(this.principalId, applicationId);
+            console.log('Score refreshed:', _score);
+            this.updateScore(Number(_score) || 0);
         },
         saveToLocalStorage() {
             localStorage.setItem('walletInfo', JSON.stringify({

@@ -23,13 +23,8 @@
     const verifiedCriterias = ref({});
     const pointsGained = ref(0);
     const walletStore = useWalletStore();
-    const { principalId, accountId, balance, isConnected, shortPrincipal, currentWallet } =
-        storeToRefs(walletStore);
+    const { principalId, isConnected, currentWallet } = storeToRefs(walletStore);
     const loading = ref(false);
-    const verifyData = ref({
-        score: 0,
-        verified: false
-    });
     const validator = ref(null);
 
     const startVerification = async (criteria) => {
@@ -64,6 +59,7 @@
                     break;
             }
             if(_result && _result.ok > 0) {
+                walletStore.getUserScore(props.applicationId);//Update score
                 Notify.success('Verification successful: You got ' + _result.ok + ' points from ' + validator.value.name + ' validator');
             }else{
                 Notify.error('Verification failed: Please try again');
@@ -117,11 +113,10 @@
                 loading.value = false;
                 Dialog.closeLoading();
                 if (result && result.success) {
+                    walletStore.getUserScore(props.applicationId);//Update score
                     Notify.success(
                         'Verification successful: You got '+criteria.score+' points from '+validator.value.name+' validator'
                     );
-                    verifyData.value.score = criteria.score;
-                    verifyData.value.verified = true;
                 } else {
                     Notify.error(
                         'Verification failed: The validator returned an error, please try again later!'
@@ -129,7 +124,6 @@
                 }
             } catch (error) {
                 Notify.warning('Verification failed: ' + error);
-                verifyData.value.verified = true;
             } finally {
                 loading.value = false;
                 Dialog.closeLoading();

@@ -40,7 +40,7 @@ export const getWallets = async () => {
 };
 export const getApplication = async (applicationId = APPLICATION_ID) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getApplication(applicationId);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getApplication(applicationId);
     } catch (error) {
         console.error(error);
         return {err: error};
