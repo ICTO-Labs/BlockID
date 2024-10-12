@@ -13,20 +13,14 @@ watch(isDrawerOpen, (newValue) => {
     rail.value = !newValue;
 });
 const menus = ref([
-    { title: 'Verify', value: 1, prependIcon: 'mdi-star', link: '/' },
+    { title: 'Verify', value: 1, prependIcon: 'mdi-check-decagram', link: '/' },
     {
-        title: 'Validators',
+        title: 'Applications',
         value: 2,
-        prependIcon: 'mdi-account-multiple',
-        link: '/demo'
+        prependIcon: 'mdi-apps',
+        link: '/applications'
     },
-    {
-        title: 'Gallery',
-        value: 4,
-        prependIcon: 'mdi-image-multiple',
-        link: '/gallery'
-    },
-    { title: 'Manage', value: 6, prependIcon: 'mdi-cog', link: '/manage' }
+    { title: 'System manage', value: 6, prependIcon: 'mdi-cog', link: '/manage' }
 ]);
 </script>
 <template>
@@ -57,6 +51,9 @@ const menus = ref([
                     <template v-slot:prepend>
                         <v-icon :icon="item.prependIcon"></v-icon>
                     </template>
+                    <v-tooltip activator="parent" location="right">
+                        {{ item.title }}
+                    </v-tooltip>
                 </v-list-item>
             </v-list>
         </v-navigation-drawer>

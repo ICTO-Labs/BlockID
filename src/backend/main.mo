@@ -460,19 +460,19 @@ actor BlockID {
         totalScore
     };
 
-    //Get verified criteria by validator, return list criteria id
-    public query func getVerifiedCriteria(applicationId: Types.ApplicationId, validatorId: Types.ValidatorId, walletId: Types.WalletId) : async [Types.CriteriaId] {
+    //Get verified criteria by validator, return list criteria id with score
+    public query func getVerifiedCriteria(applicationId: Types.ApplicationId, validatorId: Types.ValidatorId, walletId: Types.WalletId) : async [(Types.CriteriaId, Nat)] {
         switch (wallets.get(walletId)) {
             case null { return [] };
             case (?wallet) {
-                var verifiedCriteria : [Types.CriteriaId] = [];
+                var verifiedCriteria : [(Types.CriteriaId, Nat)] = [];
                 for (score in wallet.applicationScores.vals()) {
                     if (score.applicationId == applicationId) {
                         for (validatorScore in score.validatorScores.vals()) {
                             if (validatorScore.validatorId == validatorId) {    
                                 for (criteriaScore in validatorScore.criteriaScores.vals()) {
                                     if (criteriaScore.verified == true) {
-                                        verifiedCriteria := Array.append(verifiedCriteria, [criteriaScore.criteriaId]);
+                                        verifiedCriteria := Array.append(verifiedCriteria, [(criteriaScore.criteriaId, criteriaScore.score)]);
                                     };
                                 };
                             };

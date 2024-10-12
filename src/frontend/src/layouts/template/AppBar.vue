@@ -105,7 +105,7 @@ const toggleDrawer = () => {
             <v-menu v-else>
                 <template v-slot:activator="{ props }">
                     <v-btn dark variant="flat" v-bind="props" class="text-none">
-                        <v-avatar size="28" class="mr-4">
+                        <v-avatar size="24" class="mr-4">
                             <v-img :src="WALLETS[wallet].logo" />
                         </v-avatar>
                         {{ shortPrincipal }}

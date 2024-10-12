@@ -6,10 +6,10 @@ import ConfirmDialog from './ConfirmDialog.vue';
 import AlertDialog from './AlertDialog.vue';
 import VerifyDialog from '@/components/Validators/VerifyDialog.vue';
 import LoadingDialog from '@/components/LoadingDialog.vue';
-import ParamsInfo from '@/components/Manage/ParamsInfo.vue';
-import ApplicationForm from '@/components/Manage/Forms/Application.vue';
-import ValidatorForm from '@/components/Manage/Forms/Validator.vue';
-import CriteriaForm from '@/components/Manage/Forms/Criteria.vue';
+import ParamsInfo from '@/components/Applications/ParamsInfo.vue';
+import ApplicationForm from '@/components/Applications/Forms/Application.vue';
+import ValidatorForm from '@/components/Applications/Forms/Validator.vue';
+import CriteriaForm from '@/components/Applications/Forms/Criteria.vue';
 const dialogStore = useDialogStore();
 
 const dialogs = computed(() => dialogStore.dialogs);
