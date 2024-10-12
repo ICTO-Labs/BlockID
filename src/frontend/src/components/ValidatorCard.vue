@@ -40,8 +40,7 @@
 </script>
 
 <template>
-    <v-card class="overflow-hidden mx-auto custom-card" hover height="100%">
-        <div class="background-overlay"></div>
+    <v-card class="overflow-hidden mx-auto custom-card d-flex flex-column" hover height="100%">
         <template v-slot:prepend>
             <v-avatar size="48">
                 <v-img :alt="validator.name" :src="validator.logo"></v-img>
@@ -82,11 +81,14 @@
                 <!-- <VcFlow :verifyMethod="validator.verifyMethod" /> -->
             </v-card-text>
         </template>
-
-        <v-card-text class="pt-4">
-            {{ validator.description }}
-            
-            <v-sheet class="d-flex align-center mx-auto pt-2 pb-0 bg-transparent">
+        <v-card-text>
+            <div class="flex-grow-1 d-flex flex-column">
+                {{ validator.description }}
+            </div>
+        </v-card-text>
+        <v-sheet class="mt-auto bg-transparent">
+            <v-sheet class="d-flex align-center mx-auto px-2 pb-0 bg-transparent">
+                <v-chip label size="small" class="me-2 text-caption" color="success">{{ pointsGained }}/{{ validator.totalScore }}</v-chip>
                 <v-progress-linear
                 :location="null"
                 buffer-opacity="1"
@@ -96,10 +98,9 @@
                 min="0"
                 rounded
                 ></v-progress-linear>
-                <div class="ms-4 text-h8">{{ pointsGained }}/{{ validator.totalScore }}</div>
             </v-sheet>
-
-        </v-card-text>
+        </v-sheet>
+        
         <template v-slot:actions>
             <v-btn
                 @click="showVerifyDialog(validator.id)"

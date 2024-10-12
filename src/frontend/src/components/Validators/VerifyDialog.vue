@@ -223,6 +223,7 @@
         <v-card-text class="py-0">
             <p>{{ validator.description }}</p>
             <v-sheet class="d-flex align-center mx-auto pt-2 pb-0 bg-transparent">
+                <v-chip label size="small" class="me-2 text-caption" color="success">{{ pointsGained }}/{{ validator.totalScore }}</v-chip>
                 <v-progress-linear
                 :location="null"
                 buffer-opacity="1"
