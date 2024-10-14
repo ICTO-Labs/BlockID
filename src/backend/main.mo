@@ -145,6 +145,19 @@ actor BlockID {
             };
         }
     };
+    //Remove provider
+    public shared(msg) func removeProvider(providerId: Text) : async Result.Result<(), Text> {
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return #err("Not authorized");
+        };
+        switch (providers.get(providerId)) {
+            case null { #err("Provider not found") };
+            case (?_) {
+                providers.delete(providerId);
+                #ok(())
+            };
+        }
+    };
 
     public query func getProviders() : async [(Text, Types.Provider)] {
         Iter.toArray(providers.entries())

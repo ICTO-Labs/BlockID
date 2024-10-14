@@ -65,7 +65,7 @@ const toggleDrawer = () => {
 
         <v-app-bar-title @click="goMain()"
             >{{ projectStore.projectTitle }}
-            <span class="text-subtitle-2 ml-1">{{
+            <span class="text-subtitle-2 ml-1 d-none d-sm-inline">{{
                 projectStore.desc
             }}</span></v-app-bar-title
         >

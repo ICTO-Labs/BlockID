@@ -1,6 +1,6 @@
 <script setup>
-
+    import ProviderList from '@/components/Providers/ProviderList.vue';
 </script>
 <template>
-    System control
+    <ProviderList />
 </template>

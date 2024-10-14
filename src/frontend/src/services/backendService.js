@@ -247,3 +247,30 @@ export const unlinkWallet = async (walletId) => {
         return {err: error};
     }
 }
+
+export const createProvider = async (provider) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').createProvider(provider);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
+export const updateProvider = async (providerId, provider) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').updateProvider(providerId, provider);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
+export const removeProvider = async (providerId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').removeProvider(providerId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};

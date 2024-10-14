@@ -30,6 +30,7 @@
         "@dfinity/verifiable-credentials": "^0.0.2",
         "jose": "^5.9.3",
         "pinia": "^2.1.6",
+        "unplugin-info": "^1.2.1",
         "vue": "^3.3.4",
         "vue-router": "^4.4.5",
         "vuetify": "^3.7.1"

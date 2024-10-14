@@ -19,8 +19,7 @@ const menus = ref([
         value: 2,
         prependIcon: 'mdi-apps',
         link: '/applications'
-    },
-    { title: 'System manage', value: 6, prependIcon: 'mdi-cog', link: '/manage' }
+    }
 ]);
 </script>
 <template>

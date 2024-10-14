@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import environment from 'vite-plugin-environment';
 import vue from '@vitejs/plugin-vue';
 import dotenv from 'dotenv';
+import Info from 'unplugin-info/vite';
 
 dotenv.config({ path: '../../.env' });
 
@@ -28,7 +29,8 @@ export default defineConfig({
     plugins: [
         vue(),
         environment('all', { prefix: 'CANISTER_' }),
-        environment('all', { prefix: 'DFX_' })
+        environment('all', { prefix: 'DFX_' }),
+        Info()
     ],
     resolve: {
         alias: [
