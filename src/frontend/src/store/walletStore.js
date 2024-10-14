@@ -56,15 +56,14 @@ export const useWalletStore = defineStore('wallet', {
         },
         async getUserScore(applicationId) {
             let _score = await getCurrentWalletScore(this.principalId, applicationId);
-            if(_score && _score.err){
-                Notify.error(_score.err);
-            }else{
+            if(_score){
                 this.walletScore.primaryScore = Number(_score.primaryScore) || 0;
                 this.walletScore.linkedScore = Number(_score.linkedScore) || 0;
                 this.walletScore.linkedWallet = _score.linkedWallet;
                 this.walletScore.totalScore = Number(_score.totalScore) || 0;
+            }else{
+                Notify.error(_score.err);
             }
-            // Notify.success('Score loaded');
             this.saveToLocalStorage();
         },
         saveToLocalStorage() {

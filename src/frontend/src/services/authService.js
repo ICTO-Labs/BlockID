@@ -73,7 +73,8 @@ class AuthService {
                         console.log('check ii');
                         const authClient = await AuthClient.create(defaultOptions.createOptions);
                         const identity = authClient.getIdentity();
-                        if (identity) {
+                        //check if identity is valid: 2vxsx-fae
+                        if (identity && identity.getPrincipal().toString() != '2vxsx-fae') {
                             return ({
                                 success: true,
                                 message: 'Connected to Internet Identity',

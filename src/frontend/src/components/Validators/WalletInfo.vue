@@ -128,7 +128,7 @@
     }
     watchEffect(async () => {
         if (isConnected.value) {
-            await walletStore.getUserScore(props.applicationId);
+            walletStore.getUserScore(props.applicationId);
             _getMyLinkedWallets();
             _getMyPendingLinkRequests();
         }
