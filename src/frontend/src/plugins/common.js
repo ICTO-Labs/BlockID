@@ -100,3 +100,22 @@ export const toSimpleArray = (array) => {
         return array;
     }
 };
+//Return other principal when input array of principal (primary and secondary)
+export const getSecondaryPrincipal = (myPrincipal, principals) => {
+    if(principals.length != 2) return null;
+    return principals.find(p => principalToText(p) != myPrincipal);
+}
+
+export const copyToClipboard = (text, item) => {
+    if (!navigator.clipboard) {
+        deepCopy(text);
+        return;
+    }
+    navigator.clipboard.writeText(text).then(function() {
+        // toast.clear();
+        // toast.info(item+' copied!');
+        console.log('Async: Copying to clipboard was successful!');
+    }, function(err) {
+        console.error('Async: Could not copy text: ', err);
+    });
+}
