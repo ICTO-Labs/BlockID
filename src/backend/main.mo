@@ -34,6 +34,15 @@ actor BlockID {
     private stable var LIMIT_APPLICATION_PER_USER : Nat = 10;
     private stable var LIMIT_VALIDATOR_PER_APPLICATION : Nat = 10;
 
+    //Wallet link config
+    private stable var MAX_LINKED_WALLETS : Nat = 1;
+    private stable var REQUIRE_LINK_CONFIRMATION : Bool = true;
+
+    private var walletLinks = HashMap.HashMap<Types.WalletId, Types.WalletLink>(0, Principal.equal, Principal.hash);
+    private stable var _walletLinks : [(Types.WalletId, Types.WalletLink)] = [];
+    private var pendingLinks = HashMap.HashMap<Types.WalletId, [Types.WalletId]>(0, Principal.equal, Principal.hash);
+    private stable var _pendingLinks : [(Types.WalletId, [Types.WalletId])] = [];
+
     //ID generator
     private stable var nextValidatorId : Nat = 0;
     private stable var nextCriteriaId : Nat = 0;
@@ -44,12 +53,16 @@ actor BlockID {
         _wallets := Iter.toArray(wallets.entries());
         _applications := Iter.toArray(applications.entries());
         _providers := Iter.toArray(providers.entries());
+        _walletLinks := Iter.toArray(walletLinks.entries());
+        _pendingLinks := Iter.toArray(pendingLinks.entries());
     };
     system func postupgrade() {
         validators := HashMap.fromIter<Text, Types.Validator>(_validators.vals(), 0, Text.equal, Text.hash);
         wallets := HashMap.fromIter<Types.WalletId, Types.Wallet>(_wallets.vals(), 0, Principal.equal, Principal.hash);
         applications := HashMap.fromIter<Text, Types.Application>(_applications.vals(), 0, Text.equal, Text.hash);
         providers := HashMap.fromIter<Text, Types.Provider>(_providers.vals(), 0, Text.equal, Text.hash);
+        walletLinks := HashMap.fromIter<Types.WalletId, Types.WalletLink>(_walletLinks.vals(), 0, Principal.equal, Principal.hash);
+        pendingLinks := HashMap.fromIter<Types.WalletId, [Types.WalletId]>(_pendingLinks.vals(), 0, Principal.equal, Principal.hash);
     };
     //********************** System function **********************//
     private func _isAdmin(p : Text) : (Bool) {
@@ -437,28 +450,6 @@ actor BlockID {
         }
     };
 
-    //Get current wallet score
-    public query func getCurrentWalletScore(walletId: Types.WalletId, applicationId: Text) : async Nat {
-        var totalScore = 0;
-        let now = Time.now();
-
-        switch (wallets.get(walletId)) {
-            case null { return 0 };
-            case (?wallet) {
-                for (score in wallet.applicationScores.vals()) {
-                    if(score.applicationId == applicationId){
-                        for (validatorScore in score.validatorScores.vals()) {
-                            if (validatorScore.expirationTime > now) {
-                                totalScore += validatorScore.totalScore;
-                            };
-                        };
-                    };
-                };
-            };
-        };
-
-        totalScore
-    };
 
     //Get verified criteria by validator, return list criteria id with score
     public query func getVerifiedCriteria(applicationId: Types.ApplicationId, validatorId: Types.ValidatorId, walletId: Types.WalletId) : async [(Types.CriteriaId, Nat)] {
@@ -486,34 +477,58 @@ actor BlockID {
 
     //Get wallet score
     public query func getWalletScore(walletId: Types.WalletId, applicationId: Text) : async {
+        primaryScore: Nat;
+        linkedScore: Nat;
         totalScore: Nat;
-        validScores: [Types.WalletScore];
-        expiredScores: [Types.WalletScore];
+        linkedWallet: ?(Types.WalletId, Nat);
     } {
+        var primaryScore = 0;
+        var linkedScore = 0;
+        var linkedWallet : ?(Types.WalletId, Nat) = null;
         var totalScore = 0;
-        var validScores : [Types.WalletScore] = [];
-        var expiredScores : [Types.WalletScore] = [];
         let now = Time.now();
 
-        switch (wallets.get(walletId)) {
-            case null { { totalScore = 0; validScores = []; expiredScores = [] } };
-            case (?wallet) {
-                //Check application
-                for (score in wallet.applicationScores.vals()) {
-                    if (score.applicationId == applicationId) {
-                        for (validatorScore in score.validatorScores.vals()) {
-                            if (validatorScore.expirationTime > now) {
-                                totalScore += validatorScore.totalScore;
-                                validScores := Array.append(validScores, [validatorScore]);
-                            } else {
-                                expiredScores := Array.append(expiredScores, [validatorScore]);
+        func processWallet(currentWalletId: Types.WalletId) : Nat {
+            var walletScore = 0;
+            switch (wallets.get(currentWalletId)) {
+                case null { };
+                case (?wallet) {
+                    for (score in wallet.applicationScores.vals()) {
+                        if (score.applicationId == applicationId) {
+                            for (validatorScore in score.validatorScores.vals()) {
+                                if (validatorScore.expirationTime > now) {
+                                    walletScore += validatorScore.totalScore;
+                                };
                             };
                         };
                     };
                 };
-                { totalScore = totalScore; validScores = validScores; expiredScores = expiredScores }
             };
-        }
+            walletScore
+        };
+
+        // Process the queried wallet
+        primaryScore := processWallet(walletId);
+        totalScore := primaryScore;
+
+        // Check if this wallet is linked to any wallet
+        switch (walletLinks.get(walletId)) {
+            case null { };
+            case (?link) {
+                if (link.primaryWallet == walletId) {
+                    // This wallet is a primary wallet, calculate score from secondary
+                    let secondaryScore = processWallet(link.secondaryWallet);
+                    linkedWallet := ?(link.secondaryWallet, secondaryScore);
+                    totalScore += secondaryScore;
+                    linkedScore := secondaryScore;
+                } else {
+                    // This wallet is a secondary wallet, just show the primary wallet info
+                    linkedWallet := ?(link.primaryWallet, processWallet(link.primaryWallet));
+                };
+            };
+        };
+
+        { primaryScore = primaryScore; linkedScore = linkedScore; totalScore = totalScore; linkedWallet = linkedWallet }
     };
 
     //Check limit application per user
@@ -745,5 +760,171 @@ actor BlockID {
         };
         _admins := Array.filter(_admins, func (a: Text) : Bool { a != admin });
         return #ok(());
+    };
+
+    //################### Wallet link ###########################################################
+    private func countActiveLinks(walletId: Types.WalletId) : Nat {
+        switch (walletLinks.get(walletId)) {
+            case null { 0 };
+            case (?_) { 1 }; // If there is one link in walletLinks, it is an active link
+        };
+    };
+    //Request link wallet from primary wallet
+    public shared({caller}) func requestLinkWallet(secondaryWalletId: Types.WalletId) : async Result.Result<(), Text> {
+        let primaryWalletId = caller;
+
+        if (Principal.equal(primaryWalletId, secondaryWalletId)) {
+            return #err("Cannot link a wallet to itself");
+        };
+
+        if (countActiveLinks(primaryWalletId) >= MAX_LINKED_WALLETS) {
+            return #err("Maximum number of linked wallets reached for the primary wallet");
+        };
+
+        switch (walletLinks.get(primaryWalletId), walletLinks.get(secondaryWalletId)) {
+            case (?_, _) { return #err("Primary wallet is already linked") };
+            case (_, ?_) { return #err("Secondary wallet is already linked") };
+            case (null, null) {
+                // Add new request to pendingLinks
+                switch (pendingLinks.get(secondaryWalletId)) {
+                    case null { pendingLinks.put(secondaryWalletId, [primaryWalletId]) };
+                    case (?existingRequests) {
+                        pendingLinks.put(secondaryWalletId, Array.append(existingRequests, [primaryWalletId]));
+                    };
+                };
+                #ok()
+            };
+        };
+    };
+
+    //Accept link wallet from secondary wallet
+    public shared({caller}) func acceptLinkWallet(primaryWalletId: Types.WalletId) : async Result.Result<(), Text> {
+        let secondaryWalletId = caller;
+        
+        switch (pendingLinks.get(secondaryWalletId)) {
+            case null { return #err("No pending link request") };
+            case (?requests) {
+                switch (Array.find(requests, func (id: Types.WalletId) : Bool { id == primaryWalletId })) {
+                    case null { return #err("No link request from this wallet") };
+                    case (?_) {
+                        if (countActiveLinks(primaryWalletId) >= MAX_LINKED_WALLETS or 
+                            countActiveLinks(secondaryWalletId) >= MAX_LINKED_WALLETS) {
+                            pendingLinks.delete(secondaryWalletId);
+                            return #err("Maximum number of linked wallets reached for one of the wallets");
+                        };
+                        
+                        let now = Time.now();
+                        let newLink : Types.WalletLink = {
+                            primaryWallet = primaryWalletId;
+                            secondaryWallet = secondaryWalletId;
+                            creationTime = now;
+                        };
+                        walletLinks.put(primaryWalletId, newLink);
+                        
+                        // Remove the accepted link request
+                        let updatedRequests = Array.filter(requests, func (id: Types.WalletId) : Bool { id != primaryWalletId });
+                        if (Array.size(updatedRequests) == 0) {
+                            pendingLinks.delete(secondaryWalletId);
+                        } else {
+                            pendingLinks.put(secondaryWalletId, updatedRequests);
+                        };
+                        #ok()
+                    };
+                };
+            };
+        };
+    };
+
+    //Reject link wallet
+    public shared({caller}) func rejectLinkWallet(primaryWalletId: Types.WalletId) : async Result.Result<(), Text> {
+        let secondaryWalletId = caller;
+
+        switch (pendingLinks.get(secondaryWalletId)) {
+            case null { return #err("There is no pending link request") };
+            case (?requests) {
+                let updatedRequests = Array.filter(requests, func (id: Types.WalletId) : Bool { id != primaryWalletId });
+                if (Array.size(updatedRequests) == 0) {
+                    pendingLinks.delete(secondaryWalletId);
+                } else {
+                    pendingLinks.put(secondaryWalletId, updatedRequests);
+                };
+                #ok()
+            };
+        };
+    };
+
+    //Unlink wallet
+    public shared(msg) func unlinkWallet(linkedWalletId: Types.WalletId) : async Result.Result<(), Text> {
+        let callerWalletId = msg.caller;
+
+        switch (walletLinks.get(callerWalletId)) {
+            case null {
+                // Check if the caller is a secondary wallet
+                switch (walletLinks.get(linkedWalletId)) {
+                    case null { return #err("No link found between the wallets") };
+                    case (?link) {
+                        if (link.secondaryWallet == callerWalletId) {
+                            walletLinks.delete(linkedWalletId);
+                            return #ok();
+                        } else {
+                            return #err("Caller is not authorized to unlink this wallet");
+                        };
+                    };
+                };
+            };
+            case (?link) {
+                // Caller is a primary wallet
+                if (link.secondaryWallet == linkedWalletId) {
+                    walletLinks.delete(callerWalletId);
+                    return #ok();
+                } else {
+                    return #err("The specified wallet is not linked to the caller");
+                };
+            };
+        };
+    };
+
+    //Get pending link requests
+    public query({caller}) func getPendingLinkRequests() : async [Types.WalletId] {
+        switch (pendingLinks.get(caller)) {
+            case null { [] };
+            case (?requests) { requests };
+        };
+    };
+
+    //Get my linked wallets
+    public shared({caller}) func getMyLinkedWallets() : async [{
+        linkedWallet: Types.WalletId;
+        isPrimary: Bool;
+        creationTime: Int;
+    }] {
+        var result : [{
+            linkedWallet: Types.WalletId;
+            isPrimary: Bool;
+            creationTime: Int;
+        }] = [];
+
+        for ((walletId, link) in walletLinks.entries()) {
+            if (link.primaryWallet == caller) {
+                result := Array.append(result, [{
+                    linkedWallet = link.secondaryWallet;
+                    isPrimary = true;
+                    creationTime = link.creationTime;
+                }]);
+            } else if (link.secondaryWallet == caller) {
+                result := Array.append(result, [{
+                    linkedWallet = link.primaryWallet;
+                    isPrimary = false;
+                    creationTime = link.creationTime;
+                }]);
+            };
+        };
+
+        result
+    };
+
+    //Show all linked wallets
+    public query func getAllLinkedWallets() : async [(Types.WalletId, Types.WalletLink)] {
+        Iter.toArray(walletLinks.entries())
     };
 }

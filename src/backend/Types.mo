@@ -158,4 +158,9 @@ module {
         #Ok: Bool;
         #Err: Text;
     };
+    public type WalletLink = {
+        primaryWallet: WalletId;
+        secondaryWallet: WalletId;
+        creationTime: Int;
+};
 }

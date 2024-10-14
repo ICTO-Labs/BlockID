@@ -87,7 +87,7 @@ export const getCurrentWalletScore = async (
     applicationId = APPLICATION_ID
 ) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getCurrentWalletScore(
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getWalletScore(
             Principal.fromText(walletId),
             applicationId
         );
@@ -184,3 +184,66 @@ export const getProviders = async () => {
         return [];
     }
 };
+
+export const getLinkedWallets = async (walletId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getLinkedWallets(walletId);
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+};
+
+export const requestLinkWallet = async (secondaryWalletId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').requestLinkWallet(secondaryWalletId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
+export const acceptLinkWallet = async (primaryWalletId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').acceptLinkWallet(primaryWalletId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
+export const rejectLinkWallet = async (primaryWalletId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').rejectLinkWallet(primaryWalletId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
+export const getMyLinkedWallets = async () => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getMyLinkedWallets();
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+};
+
+export const getPendingLinkRequests = async () => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getPendingLinkRequests();
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+};
+
+export const unlinkWallet = async (walletId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').unlinkWallet(walletId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+}

@@ -23,7 +23,7 @@ module {
                         isValid = true;
                         score = criteria.score;
                     };
-                    case _ return { isValid = false; score = 1 };
+                    case _ return { isValid = false; score = 0 };
                 };
             };
             case (#Remote(canisterId)) {
@@ -38,7 +38,7 @@ module {
                 };
             };
             case _ {
-                return { isValid = false; score = 2 };
+                return { isValid = false; score = 0 };
             };
         };
         // let value = await getValue(walletId, criteria);

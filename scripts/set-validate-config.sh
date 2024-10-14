@@ -127,5 +127,5 @@ dfx canister call validate set_remote_canister_id '(principal "'"$BACKEND_CANIST
 # Revert changes
 # git checkout ./rp/frontend/static/.well-known/ii-alternative-origins
 
-# add anonymous admin
-dfx canister call validate add_admin '(principal "2vxsx-fae")' --network "$DFX_NETWORK"
+# add internet identity admin
+dfx canister call validate add_admin '(principal "52v7r-qomnk-5pvpw-afs5u-zbodl-5hsj3-ajj66-b3g4g-tu6sv-x7wdd-xae")' --network "$DFX_NETWORK"

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import authService from '@/services/authService';
 import { getCurrentWalletScore } from '@/services/backendService';
-
+import Notify from '@/plugins/notify';
 export const useWalletStore = defineStore('wallet', {
     state: () => ({
         principalId: null,
@@ -14,6 +14,12 @@ export const useWalletStore = defineStore('wallet', {
         currentWallet: null,
         actors: {},
         walletInfo: {},
+        walletScore: {
+            primaryScore: 0,
+            linkedScore: 0,
+            totalScore: 0,
+            linkedWallet: null
+        }
     }),
     actions: {
         setWalletInfo(info) {
@@ -50,8 +56,16 @@ export const useWalletStore = defineStore('wallet', {
         },
         async getUserScore(applicationId) {
             let _score = await getCurrentWalletScore(this.principalId, applicationId);
-            console.log('Score refreshed:', _score);
-            this.updateScore(Number(_score) || 0);
+            if(_score && _score.err){
+                Notify.error(_score.err);
+            }else{
+                this.walletScore.primaryScore = Number(_score.primaryScore) || 0;
+                this.walletScore.linkedScore = Number(_score.linkedScore) || 0;
+                this.walletScore.linkedWallet = _score.linkedWallet;
+                this.walletScore.totalScore = Number(_score.totalScore) || 0;
+            }
+            // Notify.success('Score loaded');
+            this.saveToLocalStorage();
         },
         saveToLocalStorage() {
             localStorage.setItem('walletInfo', JSON.stringify({
