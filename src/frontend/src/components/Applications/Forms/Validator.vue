@@ -1,5 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { QuillEditor } from '@vueup/vue-quill'
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
+
 import { updateValidator, createValidator } from '@/services/backendService';
 import Dialog from '@/plugins/dialog';
 import Notify from '@/plugins/notify';
@@ -58,7 +61,8 @@ onMounted(() => {
             label="Validator Name"
             required
         ></v-text-field>
-          <v-textarea v-model="form.description" label="Description"></v-textarea>
+          <!-- <v-textarea v-model="form.description" label="Description"></v-textarea> -->
+          <QuillEditor v-model:content="form.description" contentType="html" theme="snow" style="height: 150px"/>
           <v-text-field v-model="form.logo" label="URL Logo"></v-text-field>
           <div class="d-flex justify-end pt-4">
               <v-btn type="submit" color="primary" class="mr-2" :loading="loading">Save</v-btn>

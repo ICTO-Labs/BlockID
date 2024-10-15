@@ -70,7 +70,7 @@ const showAddDialog = () => {
                 <td>
                     {{ criteria.name }} <VcFlow v-if="criteria.isVC"></VcFlow>
                 </td>
-                <td>{{ criteria.description }}</td>
+                <td><p v-html="criteria.description"></p></td>
                 <td>
                     <v-chip
                         v-if="criteria.providerId.length > 0"

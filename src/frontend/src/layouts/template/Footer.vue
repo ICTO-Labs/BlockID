@@ -11,8 +11,7 @@ const links = [
 </script>
 <template>
     <v-footer color="copyright" app>
-        <v-container fluid>
-            <v-row no-gutters align="center" justify="space-between">
+        <v-row no-gutters align="center" justify="space-between">
                 <v-col cols="12" sm="auto" class="text-center text-sm-left">
                     <div class="text-body-2">
                         {{ new Date().getFullYear() }} — <strong>BlockID</strong> | Entirely
@@ -20,7 +19,7 @@ const links = [
                         <a href="https://internetcomputer.org" target="_blank" class="text-decoration-none">Internet Computer</a>  
                     </div>
                 </v-col>
-                <v-col cols="12" sm="auto" class="text-center text-sm-right mt-4 mt-sm-0">
+                <v-col cols="12" sm="auto" class="text-center text-sm-right mt-sm-0">
                     <v-chip size="small" color="grey-darken-3" class="text-default">
                             <a target="_blank" :href="`https://github.com/ICTO-Labs/BlockID/commit/${sha}`" class="text-decoration-none text-gray-lighten-1" title="Github commit"><v-icon>mdi-code-tags</v-icon> {{ sha.substring(0,7) }}</a>
                         <v-tooltip activator="parent" location="top">
@@ -39,6 +38,5 @@ const links = [
                     ></v-btn>
                 </v-col>
             </v-row>
-        </v-container>
     </v-footer>
 </template>

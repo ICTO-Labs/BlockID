@@ -95,7 +95,7 @@ watch(() => props.applicationId, fetchValidators);
                 </template>
             </v-expansion-panel-title>
             <v-expansion-panel-text>
-                <p>{{ validator.description }}</p>
+                <p v-html="validator.description"></p>
                 <CriteriaList
                     :validatorId="validator.id"
                     :criterias="validator.criterias"

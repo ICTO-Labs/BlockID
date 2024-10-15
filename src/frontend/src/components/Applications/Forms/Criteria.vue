@@ -1,5 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { QuillEditor } from '@vueup/vue-quill'
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import { toSimpleArray } from '@/plugins/common';
 import {
     getProviders,
@@ -12,7 +14,7 @@ const props = defineProps(['editedItem', 'criteria', 'validatorId', 'method']);
 const emit = defineEmits(['save', 'cancel']);
 const providers = ref([]);
 const localParams = ref([]);
-
+const loading = ref(false);
 const form = ref({
     id: '_',
     name: '',
@@ -56,7 +58,6 @@ const removeArgument = (argIndex) => {
     form.value.providerArgs[0].splice(argIndex, 1);
 };
 const initializeParams = () => {
-    console.log('initializeParams', props.providerParams);
     //Check if providerId is an array and has elements
     if (form.value?.providerId) {
         const provider = providers.value.find(
@@ -87,7 +88,6 @@ const initializeParams = () => {
     }
 };
 const addParam = () => {
-    console.log('addParam', props.providerId);
     if (!props.providerId) {
         form.value.providerParams[0].push({
             key: '',
@@ -134,6 +134,7 @@ const saveCriteria = async () => {
         return param;
     });
 
+    loading.value = true;
     if (props.method == 'add') {
         await createCriteria(props.validatorId, form.value);
         Notify.success('Criteria created successfully');
@@ -143,7 +144,7 @@ const saveCriteria = async () => {
         Notify.success('Criteria updated successfully');
         Dialog.close('criteriaForm');
     }
-    console.log('form.value', form.value);
+    loading.value = false;
 };
 
 onMounted(() => {
@@ -156,7 +157,6 @@ onMounted(() => {
             ? props.criteria.providerId[0]
             : null;
     }
-    console.log('check va', form.value);
 });
 </script>
 
@@ -172,10 +172,11 @@ onMounted(() => {
                     label="Criteria name"
                     required
                 ></v-text-field>
-                <v-textarea
+                <QuillEditor v-model:content="form.description" contentType="html" theme="snow" style="height: 150px"/>
+                <!-- <v-textarea
                     v-model="form.description"
                     label="Description"
-                ></v-textarea>
+                ></v-textarea> -->
                 <v-text-field
                     v-model.number="form.score"
                     label="Score"
@@ -332,6 +333,7 @@ onMounted(() => {
                         @click="saveCriteria"
                         color="primary"
                         class="mr-2"
+                        :loading="loading"
                         >Save</v-btn
                     >
                     <v-btn @click="Dialog.close('criteriaForm')">Cancel</v-btn>

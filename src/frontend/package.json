@@ -28,6 +28,7 @@
         "@dfinity/nns": "^6.0.0",
         "@dfinity/principal": "^2.0.0",
         "@dfinity/verifiable-credentials": "^0.0.2",
+        "@vueup/vue-quill": "^1.2.0",
         "jose": "^5.9.3",
         "pinia": "^2.1.6",
         "unplugin-info": "^1.2.1",

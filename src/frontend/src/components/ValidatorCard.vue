@@ -85,8 +85,8 @@
             </v-card-text>
         </template>
         <v-card-text>
-            <div class="flex-grow-1 d-flex flex-column">
-                {{ validator.description }}
+            <div class="flex-grow-1 d-flex flex-column overflow-hidden" style="max-height: 100px;">
+                <p v-html="validator.description"></p>
             </div>
         </v-card-text>
         <v-sheet class="mt-auto bg-transparent">

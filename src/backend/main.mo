@@ -784,6 +784,10 @@ actor BlockID {
     };
     //Request link wallet from primary wallet
     public shared({caller}) func requestLinkWallet(secondaryWalletId: Types.WalletId) : async Result.Result<(), Text> {
+        //Prevent anonymous user
+        if(Principal.isAnonymous(caller) == true){
+            return #err("Please login to your wallet");
+        };
         let primaryWalletId = caller;
 
         if (Principal.equal(primaryWalletId, secondaryWalletId)) {

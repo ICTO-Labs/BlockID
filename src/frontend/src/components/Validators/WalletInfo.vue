@@ -187,7 +187,7 @@
                     </v-card-item>
             </v-card>
         </v-col>
-        <v-col cols="12" md="7">
+        <v-col cols="12" md="7" v-if="isConnected">
             <v-card height="100%">
                 <v-card-title>Connected Wallet 
                     <v-chip label variant="flat" color="primary" size="small">{{ currentWallet }}</v-chip></v-card-title>
