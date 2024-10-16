@@ -886,8 +886,12 @@ actor BlockID {
         };
     };
 
-    public query func getWallets() : async [(Types.WalletId, Types.Wallet)] {
-        Iter.toArray(wallets.entries())
+    public shared(msg) func getWallets() : async [(Types.WalletId, Types.Wallet)] {
+        if(_isAdmin(Principal.toText(msg.caller))){
+            Iter.toArray(wallets.entries())
+        }else{
+            []
+        }
     };
     public query func getAdmins() : async [Text] {
         _admins
@@ -1075,18 +1079,30 @@ actor BlockID {
     };
 
     //Show all linked wallets
-    public query func getAllLinkedWallets() : async [(Types.WalletId, Types.WalletLink)] {
-        Iter.toArray(walletLinks.entries())
+    public shared(msg) func getAllLinkedWallets() : async [(Types.WalletId, Types.WalletLink)] {
+        if(_isAdmin(Principal.toText(msg.caller))){
+            Iter.toArray(walletLinks.entries())
+        }else{
+            []
+        }
     };
 
     //Test: Get neuron ids
-    public shared func getNeuronIds() : async [Nat64] {
-        return await Provider.getNeuronIds();
+    public shared(msg) func getNeuronIds() : async [Nat64] {
+        if(_isAdmin(Principal.toText(msg.caller))){
+            return await Provider.getNeuronIds();
+        }else{
+            return []
+        }
     };
 
     //Show all verification params
-    public query func getAllVerificationParams() : async [(Text, Types.VerificationParams)] {
-        Iter.toArray(verificationParamsMap.entries())
+    public shared(msg) func getAllVerificationParams() : async [(Text, Types.VerificationParams)] {
+        if(_isAdmin(Principal.toText(msg.caller))){
+            Iter.toArray(verificationParamsMap.entries())
+        }else{
+            []
+        }
     };
 
     private func updateVerificationStats(walletId: Types.WalletId, applicationId: Text, newScore: Nat): async* (){
