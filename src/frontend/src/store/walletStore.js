@@ -57,14 +57,17 @@ export const useWalletStore = defineStore('wallet', {
         },
         async getUserScore(applicationId) {
             let _score = await getCurrentWalletScore(this.principalId, applicationId);
+            console.log('_score', _score);
             if(_score){
-                this.walletScore.primaryScore = Number(_score.primaryScore) || 0;
-                this.walletScore.linkedScore = Number(_score.linkedScore) || 0;
-                this.walletScore.linkedWallet = _score.linkedWallet;
-                this.walletScore.totalScore = Number(_score.totalScore) || 0;
-                this.walletScore.percentileAbove = Number(_score.percentileAbove) || 0;
+                this.walletScore = {
+                    primaryScore: Number(_score.primaryScore) || 0,
+                    linkedScore: Number(_score.linkedScore) || 0,
+                    linkedWallet: _score.linkedWallet,
+                    totalScore: Number(_score.totalScore) || 0,
+                    percentileAbove: Number(_score.percentileAbove) || 0,
+                }
             }else{
-                Notify.error(_score.err);
+                Notify.error('Error: Get user score failed!');
             }
             this.saveToLocalStorage();
         },

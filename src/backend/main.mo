@@ -1135,10 +1135,7 @@ actor BlockID {
         Float.nearest(percentageLower * 100) / 100
     };
 
-    // //get scoreDistribution
-    // public query func getScoreDistribution() : async [(Nat, Nat)] {
-    //     Iter.toArray(scoreDistribution.entries())
-    // };
+
     public query func getTotalVerifiedWallets() : async Nat {
         TOTAL_VERIFIED_WALLETS
     };
@@ -1147,5 +1144,48 @@ actor BlockID {
         if (_isAdmin(Principal.toText(msg.caller))) {
             TOTAL_VERIFIED_WALLETS := total;
         };
+    };
+
+    //Recount score distribution by application
+    public shared(msg) func recountDistribution(applicationId: Text) : async Text {
+        if (_isAdmin(Principal.toText(msg.caller))) {
+            // Reset score distribution
+            scoreDistribution := HashMap.HashMap<Nat, Nat>(0, Nat.equal, Hash.hash);
+            var totalVerifiedWallets = 0;
+            for (wallet in wallets.vals()) {
+                var walletTotalScore = 0;
+                var isVerified = false;
+
+                for (appScore in wallet.applicationScores.vals()) {
+                    if(appScore.applicationId == applicationId){
+                        for (validatorScore in appScore.validatorScores.vals()) {
+                            walletTotalScore += validatorScore.totalScore;
+                            if(walletTotalScore > 0){
+                                isVerified := true;
+                            };
+                        };
+                    };
+                };
+                if (isVerified) {
+                    // Update scoreDistribution
+                    let currentCount = Option.get(scoreDistribution.get(walletTotalScore), 0);
+                    scoreDistribution.put(walletTotalScore, currentCount + 1);
+                    
+                    // Increase total verified wallets
+                    totalVerifiedWallets += 1;
+                };
+            };
+            // Update TOTAL_VERIFIED_WALLETS
+            TOTAL_VERIFIED_WALLETS := totalVerifiedWallets;
+            // Log result
+            return "Recount completed. Total verified wallets: " # debug_show(TOTAL_VERIFIED_WALLETS);
+        } else {
+            return "Only admin can perform this action";
+        };
+    };
+    
+    //get scoreDistribution
+    public query func getScoreDistribution() : async [(Nat, Nat)] {
+        Iter.toArray(scoreDistribution.entries())
     };
 }
