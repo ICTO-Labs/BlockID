@@ -26,6 +26,7 @@
     const { principalId, isConnected, currentWallet } = storeToRefs(walletStore);
     const loading = ref(false);
     const validator = ref(null);
+    const currentCriteria = ref(null);
 
     const startVerification = async (criteria) => {
         console.log('startVerification:', criteria);
@@ -33,18 +34,35 @@
             Dialog.connectWallet();
             return;
         }
-        switch(criteria.isVC){
-            case true:
-                verifyVC(criteria);
-                break;
-            case false:
-            case undefined:
-                verifyCriteria(criteria.id);
-                break;
+        currentCriteria.value = criteria;
+        if (!criteria.isVC && criteria.providerParams && criteria.providerParams[0].length > 0) {
+            console.log('criteria.providerParams', criteria.providerParams);
+            Dialog.custom('paramsInput', {
+                maxWidth: 500,
+                title: 'Enter additional information',
+                params: criteria.providerParams,
+                onSubmit: handleParamsSubmit
+            });
+        } else {
+            proceedWithVerification(criteria);
         }
     };
-
-    const verifyCriteria = async (criteriaId)=>{
+    const handleParamsSubmit = (params) => {
+        proceedWithVerification(currentCriteria.value, params);
+    };
+    const proceedWithVerification = (criteria, params = {}) => {
+        console.log('proceedWithVerification', criteria, params);
+        switch(criteria.isVC){
+            case true:
+            verifyVC(criteria, params);
+            break;
+            case false:
+            case undefined:
+            verifyCriteria(criteria.id, params);
+            break;
+        }
+    };
+    const verifyCriteria = async (criteriaId, params)=>{
         loading.value = true;
         try {
             Dialog.showLoading('Verifying your wallet...');
@@ -55,7 +73,17 @@
                 _result = await verifyByValidator(props.applicationId, props.validatorId);
                     break;
                 default:
-                    _result = await verifyByCriteria(props.applicationId, props.validatorId, [criteriaId]);
+                    //create array object with params like provider template.
+                    //Params is object with key and value
+                    let _params = Object.entries(params).map(([key, value]) => {
+                        return {
+                            key: key,
+                            value: [value],
+                            dataType: { "Text": null }
+                        };
+                    });
+                    console.log('_params', _params);
+                    _result = await verifyByCriteria(props.applicationId, props.validatorId, [criteriaId], [_params]);
                     break;
             }
             if(_result && _result.ok > 0) {

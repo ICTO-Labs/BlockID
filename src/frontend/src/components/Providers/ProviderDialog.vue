@@ -35,7 +35,7 @@ const moduleTypeValue = computed({
 const addParam = () => {
     form.value.params.push({
         key: '',
-        value: '',
+        value: [''],
         dataType: { Text: null }
     });
 };
@@ -48,7 +48,9 @@ const saveProvider = async () => {
     try {
         loading.value = true;
         if (props.method === 'add') {
-            await createProvider(form.value);
+            console.log('form', form);
+            let _rs = await createProvider(form.value);
+            console.log('createProvider', _rs);
             Notify.success('Provider created successfully');
         } else {
             await updateProvider(form.value.id, form.value);
@@ -118,9 +120,9 @@ onMounted(() => {
                                 </v-col>
                                 <v-col class="pa-1">
                                     <v-text-field
-                                        v-model="param.value"
+                                        v-model="param.value[0]"
                                         label="Value"
-                                        @blur="param.value = param.value.trim()"
+                                        @blur="param.value[0] = param.value[0].trim()"
                                     ></v-text-field>
                                 </v-col>
                                 <v-col cols="auto">

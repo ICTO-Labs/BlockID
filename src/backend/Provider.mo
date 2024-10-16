@@ -3,13 +3,21 @@ import Types "Types";
 import Result "mo:base/Result";
 import Int "mo:base/Int";
 import Principal "mo:base/Principal";
-
+import Option "mo:base/Option";
+import Array "mo:base/Array";
+import Nat64 "mo:base/Nat64";
+import Text "mo:base/Text";
+import Nat "mo:base/Nat";
+import Char "mo:base/Char";
+import Nat32 "mo:base/Nat32";
 //Import validator module
 import NFT_EXT_V1 "providers/nft-ext-v1";
-
+import NNS "providers/nns/nns";
 module {
-
-    public func verifyCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider) : async Types.VerificationResult {
+    public func getNeuronIds() : async [Nat64] {
+        return await NNS.get_neuron_ids();
+    };
+    public func verifyCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider, providerParams: ?[Types.ProviderParams]) : async Types.VerificationResult {
         
         switch (provider.moduleType) {
             case (#Local(moduleName)) {
@@ -22,6 +30,50 @@ module {
                     case "autoValid" return {
                         isValid = true;
                         score = criteria.score;
+                    };
+                    case "known-neuron" {
+                        switch(providerParams){
+                            case (?params) {
+                                var _neuronId : Nat64 = 0;
+                                for (param in params.vals()) {
+                                    switch (param.key) {
+                                        case ("neuronId") {
+                                            _neuronId := textToNat64(param.value);
+                                        };
+                                        case _ {};
+                                    };
+                                };
+                                return {
+                                    isValid = await NNS.verifyNNS(_neuronId, "known-neuron", ?walletId);
+                                    score = criteria.score;
+                                }
+                            };
+                            case (null) {
+                                return { isValid = false; score = 0 };
+                            };
+                        };
+                    };
+                    case "hot-keys" {
+                        switch(providerParams){
+                            case (?params) {
+                                var _neuronId : Nat64 = 0;
+                                for (param in params.vals()) {
+                                    switch (param.key) {
+                                        case ("neuronId") {
+                                            _neuronId := textToNat64(param.value);
+                                        };
+                                        case _ {};
+                                    };
+                                };
+                                return {
+                                    isValid = await NNS.verifyNNS(_neuronId, "hot-keys", ?walletId);
+                                    score = criteria.score;
+                                }
+                            };
+                            case (null) {
+                                return { isValid = false; score = 0 };
+                            };
+                        };
                     };
                     case _ return { isValid = false; score = 0 };
                 };
@@ -72,4 +124,24 @@ module {
     //         case (_) 0;  // Default value, you might want to handle this differently
     //     }
     // };
+    func textToNat64(value: ?Text) : Nat64 {
+        switch (value) {
+            case (null) { 0 };
+            case (?v) {
+            let natValue = textToNat(v);
+            Nat64.fromNat(natValue);
+            };
+        };
+    };
+    func textToNat(txt : Text) : Nat {
+        assert(txt.size() > 0);
+        let chars = txt.chars();
+        var num : Nat = 0;
+        for (v in chars){
+            let charToNum = Nat32.toNat(Char.toNat32(v)-48);
+            assert(charToNum >= 0 and charToNum <= 9);
+            num := num * 10 +  charToNum;          
+        };
+        num;
+    };
 }

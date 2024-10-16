@@ -11,6 +11,7 @@ import ApplicationForm from '@/components/Applications/Forms/Application.vue';
 import ValidatorForm from '@/components/Applications/Forms/Validator.vue';
 import CriteriaForm from '@/components/Applications/Forms/Criteria.vue';
 import ProviderDialog from '@/components/Providers/ProviderDialog.vue';
+import ParamsInput from './Validators/ParamsInput.vue';
 const dialogStore = useDialogStore();
 
 const dialogs = computed(() => dialogStore.dialogs);
@@ -26,7 +27,8 @@ const getDialogComponent = (name) => {
         applicationForm: ApplicationForm,
         validatorForm: ValidatorForm,
         criteriaForm: CriteriaForm,
-        providerDialog: ProviderDialog
+        providerDialog: ProviderDialog,
+        paramsInput: ParamsInput,
         // Add more dialog components as needed
     };
     return components[name] || null;

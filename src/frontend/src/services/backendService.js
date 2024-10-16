@@ -12,9 +12,9 @@ export const getVerifiedCriteria = async (applicationId, validatorId, walletId) 
     }
 };
 
-export const verifyByCriteria = async (applicationId, validatorId, criteriaIds) => {
+export const verifyByCriteria = async (applicationId, validatorId, criteriaIds, params) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').verifyWalletByCriteria(applicationId, validatorId, criteriaIds);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').verifyWalletByCriteria(applicationId, validatorId, criteriaIds, params);
     } catch (error) {
         console.error(error);
         return {err: error};

@@ -13,7 +13,7 @@ import { WALLETS } from '@/config';
 const walletStore = useWalletStore();
 const { principalId, accountId, balance, isConnected, shortPrincipal, wallet } =
     storeToRefs(walletStore);
-
+import  {idlFactory as nnsIDL}  from '@/actor/did/nns.did';
 const theme = useTheme();
 
 const router = useRouter();
@@ -34,8 +34,9 @@ const handleConnect = () => {
 const checkConnect = async () => {
 
     console.log('check Connect');
-    let wallet = await Connect.canister('2ouva-viaaa-aaaaq-aaamq-cai', 'icrc1', false).icrc1_name();
-    console.log('Connect', wallet);
+    let wallet = await Connect.canister('rrkah-fqaaa-aaaaa-aaaaq-cai', nnsIDL, false).get_full_neuron(BigInt('18158107153719370439'));
+    // let wallet = await Connect.canister('rrkah-fqaaa-aaaaa-aaaaq-cai', nnsIDL, false).get_neuron_ids();
+    console.log('get_neuron_ids', wallet);
 };
 const handleLogout = async () => {
     const confirm = await Dialog.confirm({

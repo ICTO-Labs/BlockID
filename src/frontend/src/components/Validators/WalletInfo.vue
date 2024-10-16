@@ -181,8 +181,11 @@
                             max-width="64"
                             max-height="64"
                         ></v-skeleton-loader>
-                        <div class="text-subtitle-2">
-                            Higher than 90% of verified wallets at {{ applicationId }}
+                        <div class="text-subtitle-2 mt-5">
+                            <v-chip label variant="flat" color="white" size="small" width="100%"> 
+                                <v-icon>mdi-information</v-icon> 
+                                Higher than {{ walletScore.percentileAbove }}% of verified wallets on Block ID
+                            </v-chip>
                         </div>
                     </v-card-item>
             </v-card>

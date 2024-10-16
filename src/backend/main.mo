@@ -12,9 +12,11 @@ import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
 import Char "mo:base/Char";
 import Int "mo:base/Int";
-
+import Hash "mo:base/Hash";
+import Float "mo:base/Float";
 import Types "Types";
 import Provider "Provider";
+import Utils "Utils";
 
 actor BlockID {
 
@@ -33,6 +35,9 @@ actor BlockID {
     //Params config
     private stable var LIMIT_APPLICATION_PER_USER : Nat = 10;
     private stable var LIMIT_VALIDATOR_PER_APPLICATION : Nat = 10;
+    private var LAST_CLEANUP_PARAMS: Int = 0;
+    private stable var CLEANUP_EXPIRED_PARAMS_INTERVAL : Int = 1000 * 60 * 60 * 24; // 1 day
+
 
     //Wallet link config
     private stable var MAX_LINKED_WALLETS : Nat = 1;
@@ -42,10 +47,16 @@ actor BlockID {
     private stable var _walletLinks : [(Types.WalletId, Types.WalletLink)] = [];
     private var pendingLinks = HashMap.HashMap<Types.WalletId, [Types.WalletId]>(0, Principal.equal, Principal.hash);
     private stable var _pendingLinks : [(Types.WalletId, [Types.WalletId])] = [];
-
+    private var verificationParamsMap = HashMap.HashMap<Text, Types.VerificationParams>(0, Text.equal, Text.hash);
+    private stable var _verificationParamsMap: [(Text, Types.VerificationParams)] = [];
     //ID generator
     private stable var nextValidatorId : Nat = 0;
     private stable var nextCriteriaId : Nat = 0;
+
+    //Statistic
+    private stable var TOTAL_VERIFIED_WALLETS : Nat = 0;
+    private var scoreDistribution = HashMap.HashMap<Nat, Nat>(0, Nat.equal, Hash.hash);
+    private stable var _scoreDistribution : [(Nat, Nat)] = [];
 
     //********************** System function **********************//
     system func preupgrade() {
@@ -55,6 +66,8 @@ actor BlockID {
         _providers := Iter.toArray(providers.entries());
         _walletLinks := Iter.toArray(walletLinks.entries());
         _pendingLinks := Iter.toArray(pendingLinks.entries());
+        _verificationParamsMap := Iter.toArray(verificationParamsMap.entries());
+        _scoreDistribution := Iter.toArray(scoreDistribution.entries());
     };
     system func postupgrade() {
         validators := HashMap.fromIter<Text, Types.Validator>(_validators.vals(), 0, Text.equal, Text.hash);
@@ -63,6 +76,8 @@ actor BlockID {
         providers := HashMap.fromIter<Text, Types.Provider>(_providers.vals(), 0, Text.equal, Text.hash);
         walletLinks := HashMap.fromIter<Types.WalletId, Types.WalletLink>(_walletLinks.vals(), 0, Principal.equal, Principal.hash);
         pendingLinks := HashMap.fromIter<Types.WalletId, [Types.WalletId]>(_pendingLinks.vals(), 0, Principal.equal, Principal.hash);
+        verificationParamsMap := HashMap.fromIter<Text, Types.VerificationParams>(_verificationParamsMap.vals(), 0, Text.equal, Text.hash);
+        scoreDistribution := HashMap.fromIter(_scoreDistribution.vals(), 0, Nat.equal, Hash.hash);
     };
     //********************** System function **********************//
     private func _isAdmin(p : Text) : (Bool) {
@@ -74,6 +89,36 @@ actor BlockID {
         return false;
     };
 
+    private func createParamsKey(criteriaId: Types.CriteriaId, params: ?[Types.ProviderParams]) : Text {
+        let paramsString = switch (params) {
+            case (null) { "NO_PARAMS" };
+            case (?p) {
+                if (Array.size(p) == 0) {
+                    "NO_PARAMS"
+                } else {
+                    Array.foldLeft<Types.ProviderParams, Text>(p, "", func (acc, param) {
+                        acc # param.key # ":" # Option.get(param.value, "") # ";"
+                    })
+                };
+            };
+        };
+        criteriaId # "|" # paramsString
+    };
+    private func cleanupExpiredParams() {
+        let now = Time.now();
+        verificationParamsMap := HashMap.mapFilter<Text, Types.VerificationParams, Types.VerificationParams>(
+            verificationParamsMap,
+            Text.equal,
+            Text.hash,
+            func (_, params) {
+                if (params.expirationTime > now) {
+                    ?params
+                } else {
+                    null
+                }
+            }
+        );
+    };
     //Helper function
     private func _generateId(prefix : Text) : Text {
         switch (prefix) {
@@ -321,6 +366,7 @@ actor BlockID {
                             score = vcCriteria.score;
                             verified = true;
                             verificationTime = ?now;
+                            expirationTime = ?calculateExpirationTime(vcCriteria.expirationTime);
                         };
                         
                         // Update wallet score
@@ -333,82 +379,168 @@ actor BlockID {
         };
     };
 
+    // Calculate expiration time
+    private func calculateExpirationTime(expirationTimeInSeconds: Int) : Int {
+        let now = Time.now();
+        if (expirationTimeInSeconds == 0) {
+            // Set expiration time to 30 years from now
+            now + 30 * 365 * 24 * 60 * 60 * 1_000_000_000
+        } else {
+            now + expirationTimeInSeconds * 1_000_000_000 // Convert seconds to nanoseconds
+        }
+    };
     //Verify single criteria
-    private func _verifySingleCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider) : async Types.CriteriaScore {
+    private func _verifySingleCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider, params: ?[Types.ProviderParams]) : async Types.CriteriaScore {
         let now = Time.now();
         let _defaultScore = {
             criteriaId = criteria.id;
             score = 0;
             verified = false;
             verificationTime = null;
+            expirationTime = null;
         };
+
+        // Cleanup expired params
+        if(now > LAST_CLEANUP_PARAMS + CLEANUP_EXPIRED_PARAMS_INTERVAL){
+            cleanupExpiredParams();
+            LAST_CLEANUP_PARAMS := now;
+        };
+        // Check if we need to process params
+        let shouldProcessParams = switch (params) {
+            case (null) { false };
+            case (?p) { Array.size(p) > 0 };
+        };
+
+        // Process params if needed
+        if (shouldProcessParams) {
+            let paramsKey = createParamsKey(criteria.id, params);
+            if (paramsKey != criteria.id # "|NO_PARAMS") {
+                switch (verificationParamsMap.get(paramsKey)) {
+                    case (?existingParams) {
+                    if (existingParams.walletId != walletId and existingParams.expirationTime > now) {
+                        return _defaultScore; // Params already used for another wallet and not expired
+                    };
+                };
+                    case (null) { };
+                };
+            }
+        };
+        // Verify criteria
         if (criteria.isVC == false and provider.id != "-") {
-            let result = await Provider.verifyCriteria(walletId, criteria, provider);
-            if(result.isValid == true){
-                {
+            let result = await Provider.verifyCriteria(walletId, criteria, provider, params);
+            if (result.isValid) {
+                let score = {
                     criteriaId = criteria.id;
                     score = result.score;
                     verified = result.isValid;
                     verificationTime = ?now;
-                }
-            }else{
-                _defaultScore;
-            }
-        } else {
-            _defaultScore;
-        }
+                    expirationTime = ?calculateExpirationTime(criteria.expirationTime);
+                };
+
+                // Save params info if needed
+                if (shouldProcessParams) {
+                    let paramsKey = createParamsKey(criteria.id, params);
+                    if (paramsKey != criteria.id # "|NO_PARAMS") {
+                        let expirationTime = calculateExpirationTime(criteria.expirationTime);
+                        let newParams : Types.VerificationParams = {
+                            walletId = walletId;
+                            criteriaId = criteria.id;
+                            params = Option.get(params, []);
+                            verificationTime = now;
+                            expirationTime = expirationTime;
+                        };
+                        verificationParamsMap.put(paramsKey, newParams);
+                    };
+                };
+
+                return score;
+            };
+        };
+
+        return _defaultScore;
     };
 
     //Update wallet score
     private func updateWalletScore(walletId: Types.WalletId, applicationId: Text, validatorId: Types.ValidatorId, newCriteriaScores: [Types.CriteriaScore]) : () {
-        let wallet = switch (wallets.get(walletId)) {
-            case null {
-                {
-                    id = walletId;
-                    applicationScores = [];
-                }
-            };
-            case (?w) { w };
+    let wallet = switch (wallets.get(walletId)) {
+        case null {
+            {
+                id = walletId;
+                applicationScores = [];
+            }
         };
-
-        let totalScore = Array.foldLeft<Types.CriteriaScore, Nat>(newCriteriaScores, 0, func (acc, cs) { acc + cs.score });
-        
-        let newWalletScore : Types.WalletScore = {
-            validatorId = validatorId;
-            criteriaScores = newCriteriaScores;
-            totalScore = totalScore;
-            lastVerificationTime = Time.now();
-            expirationTime = Time.now() + 365 * 24 * 60 * 60 * 1000000000; // 1 year in nanoseconds
-        };
-
-        let updatedApplicationScores = switch (Array.find(wallet.applicationScores, func (as: Types.ApplicationScore) : Bool { as.applicationId == applicationId })) {
-            case null {
-                Array.append(wallet.applicationScores, [{
-                    applicationId = applicationId;
-                    validatorScores = [newWalletScore];
-                }])
-            };
-            case (?_appScore) {
-                Array.map(wallet.applicationScores, func (as: Types.ApplicationScore) : Types.ApplicationScore {
-                    if (as.applicationId == applicationId) {
-                        {
-                            applicationId = as.applicationId;
-                            validatorScores = Array.append(
-                                Array.filter(as.validatorScores, func (vs: Types.WalletScore) : Bool { vs.validatorId != validatorId }),
-                                [newWalletScore]
-                            )
-                        }
-                    } else {
-                        as
-                    }
-                })
-            };
-        };
-        wallets.put(walletId, { wallet with applicationScores = updatedApplicationScores });
+        case (?w) { w };
     };
 
+    let updatedApplicationScores = switch (Array.find(wallet.applicationScores, func (as: Types.ApplicationScore) : Bool { as.applicationId == applicationId })) {
+        case null {
+            Array.append(wallet.applicationScores, [{
+                applicationId = applicationId;
+                validatorScores = [{
+                    validatorId = validatorId;
+                    criteriaScores = newCriteriaScores;
+                    totalScore = Array.foldLeft<Types.CriteriaScore, Nat>(newCriteriaScores, 0, func (acc, cs) { acc + cs.score });
+                    lastVerificationTime = Time.now();
+                    expirationTime = Time.now() + 365 * 24 * 60 * 60 * 1000000000; // 1 year in nanoseconds
+                }];
+            }])
+        };
+        case (?appScore) {
+            Array.map(wallet.applicationScores, func (as: Types.ApplicationScore) : Types.ApplicationScore {
+                if (as.applicationId == applicationId) {
+                    let updatedValidatorScores = switch (Array.find(as.validatorScores, func (vs: Types.WalletScore) : Bool { vs.validatorId == validatorId })) {
+                        case null {
+                            Array.append(as.validatorScores, [{
+                                validatorId = validatorId;
+                                criteriaScores = newCriteriaScores;
+                                totalScore = Array.foldLeft<Types.CriteriaScore, Nat>(newCriteriaScores, 0, func (acc, cs) { acc + cs.score });
+                                lastVerificationTime = Time.now();
+                                expirationTime = Time.now() + 365 * 24 * 60 * 60 * 1000000000; // 1 year in nanoseconds
+                            }])
+                        };
+                        case (?existingValidatorScore) {
+                            Array.map(as.validatorScores, func (vs: Types.WalletScore) : Types.WalletScore {
+                                if (vs.validatorId == validatorId) {
+                                    let updatedCriteriaScores = Array.map(vs.criteriaScores, func (cs: Types.CriteriaScore) : Types.CriteriaScore {
+                                        switch (Array.find(newCriteriaScores, func (ncs: Types.CriteriaScore) : Bool { ncs.criteriaId == cs.criteriaId })) {
+                                            case null { cs };
+                                            case (?newScore) { newScore };
+                                        }
+                                    });
+                                    let mergedCriteriaScores = Array.append(
+                                        updatedCriteriaScores,
+                                        Array.filter(newCriteriaScores, func (ncs: Types.CriteriaScore) : Bool {
+                                            Option.isNull(Array.find(vs.criteriaScores, func (cs: Types.CriteriaScore) : Bool { cs.criteriaId == ncs.criteriaId }))
+                                        })
+                                    );
+                                    {
+                                        validatorId = vs.validatorId;
+                                        criteriaScores = mergedCriteriaScores;
+                                        totalScore = Array.foldLeft<Types.CriteriaScore, Nat>(mergedCriteriaScores, 0, func (acc, cs) { acc + cs.score });
+                                        lastVerificationTime = Time.now();
+                                        expirationTime = Time.now() + 365 * 24 * 60 * 60 * 1000000000; // 1 year in nanoseconds
+                                    }
+                                } else {
+                                    vs
+                                }
+                            })
+                        };
+                    };
+                    {
+                        applicationId = as.applicationId;
+                        validatorScores = updatedValidatorScores;
+                    }
+                } else {
+                    as
+                }
+            })
+        };
+    };
+    wallets.put(walletId, { wallet with applicationScores = updatedApplicationScores });
+};
+
     //Verify wallet with criteria
-    private func _verifyWalletByCriteria(applicationId: Text, validatorId: Types.ValidatorId, criteriaIds: [Types.CriteriaId], walletId: Types.WalletId) : async Result.Result<Nat, Text> {
+    private func _verifyWalletByCriteria(applicationId: Text, validatorId: Types.ValidatorId, criteriaIds: [Types.CriteriaId], walletId: Types.WalletId, params: ?[Types.ProviderParams]) : async Result.Result<Nat, Text> {
         switch (applications.get(applicationId), validators.get(validatorId)) {
             case (null, _) { #err("Application not found") };
             case (_, null) { #err("Validator not found") };
@@ -430,10 +562,11 @@ actor BlockID {
                                 } };
                                 case (?p) { p };
                             };
-                            let criteriaScore = await _verifySingleCriteria(walletId, criteria, provider);
+                            let criteriaScore = await _verifySingleCriteria(walletId, criteria, provider, params);
                             //Only add verified criteria
                             if(criteriaScore.verified == true and criteriaScore.score > 0){
                                 criteriaScores := Array.append(criteriaScores, [criteriaScore]);
+                                await* updateVerificationStats(walletId, applicationId, criteriaScore.score);
                             };
                         };
                     };
@@ -447,8 +580,8 @@ actor BlockID {
     };
 
     //Public verify by criterial
-    public shared({caller}) func verifyWalletByCriteria(applicationId: Text, validatorId: Types.ValidatorId, criteriaIds: [Types.CriteriaId]) : async Result.Result<Nat, Text> {
-        await _verifyWalletByCriteria(applicationId, validatorId, criteriaIds, caller)
+    public shared({caller}) func verifyWalletByCriteria(applicationId: Text, validatorId: Types.ValidatorId, criteriaIds: [Types.CriteriaId], params: ?[Types.ProviderParams]) : async Result.Result<Nat, Text> {
+        await _verifyWalletByCriteria(applicationId, validatorId, criteriaIds, caller, params)
     };
 
     // Verify all criteria of a validator
@@ -458,7 +591,7 @@ actor BlockID {
             case (_, null) { #err("Validator not found") };
             case (?_, ?validator) {
                 let criteriaIds = Array.map<Types.Criteria, Types.CriteriaId>(validator.criterias, func (c) { c.id });
-                await _verifyWalletByCriteria(applicationId, validatorId, criteriaIds, caller)
+                await _verifyWalletByCriteria(applicationId, validatorId, criteriaIds, caller, null)
             };
         }
     };
@@ -489,39 +622,40 @@ actor BlockID {
     };
 
     //Get wallet score
+    private func _getWalletScore(walletId: Types.WalletId, applicationId: Text) : Nat {
+        var walletScore = 0;
+        let now = Time.now();
+        switch (wallets.get(walletId)) {
+            case null { };
+            case (?wallet) {
+                for (score in wallet.applicationScores.vals()) {
+                    if (score.applicationId == applicationId) {
+                        for (validatorScore in score.validatorScores.vals()) {
+                            if (validatorScore.expirationTime > now) {
+                                walletScore += validatorScore.totalScore;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        walletScore
+    };
+
+    //Get wallet score
     public query func getWalletScore(walletId: Types.WalletId, applicationId: Text) : async {
         primaryScore: Nat;
         linkedScore: Nat;
         totalScore: Nat;
+        percentileAbove: Float;
         linkedWallet: ?(Types.WalletId, Nat);
     } {
         var primaryScore = 0;
         var linkedScore = 0;
         var linkedWallet : ?(Types.WalletId, Nat) = null;
         var totalScore = 0;
-        let now = Time.now();
-
-        func processWallet(currentWalletId: Types.WalletId) : Nat {
-            var walletScore = 0;
-            switch (wallets.get(currentWalletId)) {
-                case null { };
-                case (?wallet) {
-                    for (score in wallet.applicationScores.vals()) {
-                        if (score.applicationId == applicationId) {
-                            for (validatorScore in score.validatorScores.vals()) {
-                                if (validatorScore.expirationTime > now) {
-                                    walletScore += validatorScore.totalScore;
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-            walletScore
-        };
-
-        // Process the queried wallet
-        primaryScore := processWallet(walletId);
+        // Get the wallet score
+        primaryScore := _getWalletScore(walletId, applicationId);
         totalScore := primaryScore;
 
         // Check if this wallet is linked to any wallet
@@ -530,18 +664,18 @@ actor BlockID {
             case (?link) {
                 if (link.primaryWallet == walletId) {
                     // This wallet is a primary wallet, calculate score from secondary
-                    let secondaryScore = processWallet(link.secondaryWallet);
+                    let secondaryScore = _getWalletScore(link.secondaryWallet, applicationId);
                     linkedWallet := ?(link.secondaryWallet, secondaryScore);
                     totalScore += secondaryScore;
                     linkedScore := secondaryScore;
                 } else {
                     // This wallet is a secondary wallet, just show the primary wallet info
-                    linkedWallet := ?(link.primaryWallet, processWallet(link.primaryWallet));
+                    linkedWallet := ?(link.primaryWallet, _getWalletScore(link.primaryWallet, applicationId));
                 };
             };
         };
-
-        { primaryScore = primaryScore; linkedScore = linkedScore; totalScore = totalScore; linkedWallet = linkedWallet }
+        let percentileAbove = _getPercentileAbove(totalScore);
+        { primaryScore = primaryScore; linkedScore = linkedScore; totalScore = totalScore; linkedWallet = linkedWallet; percentileAbove = percentileAbove }
     };
 
     //Check limit application per user
@@ -943,5 +1077,75 @@ actor BlockID {
     //Show all linked wallets
     public query func getAllLinkedWallets() : async [(Types.WalletId, Types.WalletLink)] {
         Iter.toArray(walletLinks.entries())
+    };
+
+    //Test: Get neuron ids
+    public shared func getNeuronIds() : async [Nat64] {
+        return await Provider.getNeuronIds();
+    };
+
+    //Show all verification params
+    public query func getAllVerificationParams() : async [(Text, Types.VerificationParams)] {
+        Iter.toArray(verificationParamsMap.entries())
+    };
+
+    private func updateVerificationStats(walletId: Types.WalletId, applicationId: Text, newScore: Nat): async* (){
+        let walletScore = await getWalletScore(walletId, applicationId); // Get old score
+        let oldScore = walletScore.totalScore;//include linked wallet
+        if (oldScore != newScore) {
+            // Update total verified wallets if this is a new wallet
+            if (oldScore == 0) {
+                TOTAL_VERIFIED_WALLETS += 1;
+            };
+            // Update score distribution
+            if (oldScore > 0) {
+                let oldCount = Option.get(scoreDistribution.get(oldScore), 0);
+                if (oldCount > 1) {
+                    scoreDistribution.put(oldScore, oldCount - 1);
+                } else {
+                    scoreDistribution.delete(oldScore);
+                };
+            };
+            
+            let newCount = Option.get(scoreDistribution.get(newScore), 0);
+            scoreDistribution.put(newScore, newCount + 1);
+        }
+    };
+
+    //Get percentile above
+    private func _getPercentileAbove(score: Nat) : Float {
+        var walletsWithLowerScore = 0;
+        var totalWallets = 0;
+
+        for ((s, count) in scoreDistribution.entries()) {
+            if (s < score) {
+                walletsWithLowerScore += count;
+            };
+            totalWallets += count;
+        };
+
+        if (totalWallets == 0) {
+            return 100.0; // If not have any wallets, return 100%
+        };
+
+        // Calculate percentage
+        let percentageLower = Float.fromInt(walletsWithLowerScore) / Float.fromInt(totalWallets) * 100.0;
+
+        // Round to 2 decimal places
+        Float.nearest(percentageLower * 100) / 100
+    };
+
+    // //get scoreDistribution
+    // public query func getScoreDistribution() : async [(Nat, Nat)] {
+    //     Iter.toArray(scoreDistribution.entries())
+    // };
+    public query func getTotalVerifiedWallets() : async Nat {
+        TOTAL_VERIFIED_WALLETS
+    };
+    //set totalVerifiedWallets
+    public shared(msg) func setTotalVerifiedWallets(total: Nat) : async () {
+        if (_isAdmin(Principal.toText(msg.caller))) {
+            TOTAL_VERIFIED_WALLETS := total;
+        };
     };
 }

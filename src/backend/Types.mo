@@ -118,6 +118,7 @@ module {
         score: Nat;
         verified: Bool;
         verificationTime: ?Int;
+        expirationTime: ?Int;
     };
 
     public type ApplicationScore = {
@@ -162,5 +163,13 @@ module {
         primaryWallet: WalletId;
         secondaryWallet: WalletId;
         creationTime: Int;
-};
+    };
+    public type VerificationParams = {
+        walletId: WalletId;
+        criteriaId: CriteriaId;
+        params: [ProviderParams];
+        verificationTime: Int;
+        expirationTime: Int;
+    };
+
 }

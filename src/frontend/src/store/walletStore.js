@@ -18,6 +18,7 @@ export const useWalletStore = defineStore('wallet', {
             primaryScore: 0,
             linkedScore: 0,
             totalScore: 0,
+            percentileAbove: 0,
             linkedWallet: null
         }
     }),
@@ -61,6 +62,7 @@ export const useWalletStore = defineStore('wallet', {
                 this.walletScore.linkedScore = Number(_score.linkedScore) || 0;
                 this.walletScore.linkedWallet = _score.linkedWallet;
                 this.walletScore.totalScore = Number(_score.totalScore) || 0;
+                this.walletScore.percentileAbove = Number(_score.percentileAbove) || 0;
             }else{
                 Notify.error(_score.err);
             }
