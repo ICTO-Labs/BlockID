@@ -2,6 +2,10 @@ import { Principal } from '@dfinity/principal';
 import { Buffer } from 'buffer';
 import { sha224 } from '@dfinity/principal/lib/esm/utils/sha224';
 import { getCrc32 } from '@dfinity/principal/lib/esm/utils/getCrc';
+import { h } from 'vue';
+import { VChip } from 'vuetify/components';
+import Copy from '@/components/icons/Copy.vue'; // Giả sử bạn có component Copy
+import { VTooltip } from 'vuetify/components';
 
 const isHex = (h) => {
     var regexp = /^[0-9a-fA-F]+$/;
@@ -119,3 +123,33 @@ export const copyToClipboard = (text, item) => {
         console.error('Async: Could not copy text: ', err);
     });
 }
+
+//parse template
+// export const templateParse = (template, placeholders) => {
+//     return template.replace(/\{[^}]+\}/g, (match) => {
+//         const value = placeholders[match];
+//         const replacement = typeof value === 'function' ? value() : value || match;
+//         return `<span class="text-warning label">${replacement} <Copy :text="${replacement}"></Copy></span>`;
+//     });
+// };
+export const templateParse = (template, placeholders) => {
+    const parts = template.split(/(\{[^}]+\})/g);
+    const replaceSize = 30;
+    return () => parts.map(part => {
+        if (part.match(/^\{[^}]+\}$/)) {
+            const value = placeholders[part];
+            const replacement = typeof value === 'function' ? value() : value || part;
+            return h(VChip, { class: 'text-warning', label: true, style: "background-color: '#f0f0f0', 'padding': '3px', 'border-radius': '3px'"}, () => [
+                h(VTooltip, { activator: 'parent', location: 'top' },  {
+                    default: () => replacement,
+                    activator: ({ props }) => h('span', props, [
+                        h('span', { innerHTML: replacement.length > replaceSize ? replacement.slice(0, replaceSize-2) + '...' : replacement }),
+                        ' ',
+                        h(Copy, { text: replacement })
+                    ])
+                })
+            ]);
+        }
+        return h('span', { innerHTML: part });
+    });
+};

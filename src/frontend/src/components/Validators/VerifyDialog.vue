@@ -9,6 +9,10 @@
     import Dialog from '@/plugins/dialog';
     import VcFlow from '@/components/icons/VcFlow.vue';
     import { getProviderParams } from '@/plugins/vcflow';
+    import { templateParse } from '@/plugins/common';
+    import { BACKEND_CANISTER_ID } from '@/config';
+    import Copy from '@/components/icons/Copy.vue';
+
     const props = defineProps({
         applicationId: {
             type: String,
@@ -23,11 +27,26 @@
     const verifiedCriterias = ref({});
     const pointsGained = ref(0);
     const walletStore = useWalletStore();
-    const { principalId, isConnected, currentWallet } = storeToRefs(walletStore);
+    const { principalId, accountId,isConnected, currentWallet } = storeToRefs(walletStore);
     const loading = ref(false);
     const validator = ref(null);
     const currentCriteria = ref(null);
 
+    const placeholders = computed(() => ({
+        '{BACKEND_CANISTER_ID}': BACKEND_CANISTER_ID,
+        '{MY_PRINCIPAL_ID}': principalId.value,
+        '{MY_ACCOUNT_ID}': accountId.value,
+        '{CURRENT_TIME()}': () => new Date().toLocaleString()
+    }));
+    const parseValidatorDescription = computed(() => {
+        return templateParse(validator.value.description, placeholders.value);
+    });
+    const parsedCriteriaDescriptions = computed(() => {
+        return validator.value?.criterias.map(criteria => ({
+            ...criteria,
+            parsedDescription: templateParse(criteria.description, placeholders.value)
+        })) || [];
+    });
     const startVerification = async (criteria) => {
         console.log('startVerification:', criteria);
         if (!isConnected.value) {
@@ -248,8 +267,9 @@
                 </v-chip> -->
             </v-card-text>
         </template>
-        <v-card-text class="py-0">
-            <p v-html="validator.description"></p>
+        <v-card-text class="py-0 text-body-2">
+            <!-- <p v-html="validator.description"></p></p> -->
+            <component :is="parseValidatorDescription" />
             <v-sheet class="d-flex align-center mx-auto pt-2 pb-0 bg-transparent">
                 <v-chip label size="small" class="me-2 text-caption" color="success">{{ pointsGained }}/{{ validator.totalScore }}</v-chip>
                 <v-progress-linear
@@ -271,12 +291,12 @@
                     dot-color="primary"
                     size="small"
                     color="primary"
-                    v-for="criteria in validator.criterias"
+                    v-for="criteria in parsedCriteriaDescriptions"
                     :key="criteria.id"
                 >
                     <v-card width="100%">
                         <template v-slot:title>
-                            <div class="text-subtitle-1 font-weight-bold">
+                            <div class="text-subtitle-2 font-weight-bold">
                                 {{ criteria.name }}
                                 <VcFlow :criteria="criteria.isVC" v-if="criteria.isVC" />
                                 
@@ -304,8 +324,9 @@
                             
                         </template>
                         <v-card-text class="text--primary">
-                            <div>
-                                <p v-html="criteria.description"></p>
+                            <div class="text-body-2">
+                                <!-- <p v-html="criteria.parsedDescription"></p> -->
+                                <component :is="criteria.parsedDescription" />
                             </div>
                             <div class="mt-2" v-if="criteria.score > 0">
                                 <div>

@@ -16,7 +16,7 @@ export const verifyByCriteria = async (applicationId, validatorId, criteriaIds, 
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').verifyWalletByCriteria(applicationId, validatorId, criteriaIds, params);
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return {err: error};
     }
 };
@@ -161,7 +161,7 @@ export const removeApplication = async (applicationId) => {
 
 export const updateValidator = async (validatorId, validator) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).updateValidator(validatorId, validator);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').updateValidator(validatorId, validator);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -169,7 +169,7 @@ export const updateValidator = async (validatorId, validator) => {
 };
 export const removeValidator = async (validatorId) => {
     try {
-        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).removeValidator(validatorId);
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend').removeValidator(validatorId);
     } catch (error) {
         console.error(error);
         return {err: error};
@@ -189,7 +189,7 @@ export const getLinkedWallets = async (walletId) => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getLinkedWallets(walletId);
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return [];
     }
 };
@@ -198,7 +198,7 @@ export const requestLinkWallet = async (secondaryWalletId) => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').requestLinkWallet(secondaryWalletId);
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return {err: error};
     }
 };
@@ -207,7 +207,7 @@ export const acceptLinkWallet = async (primaryWalletId) => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').acceptLinkWallet(primaryWalletId);
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return {err: error};
     }
 };
@@ -225,7 +225,7 @@ export const getMyLinkedWallets = async () => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getMyLinkedWallets();
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return [];
     }
 };
@@ -234,7 +234,7 @@ export const getPendingLinkRequests = async () => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getPendingLinkRequests();
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return [];
     }
 };
@@ -243,7 +243,7 @@ export const unlinkWallet = async (walletId) => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').unlinkWallet(walletId);
     } catch (error) {
-        console.error(error);
+        console.log(error);
         return {err: error};
     }
 }

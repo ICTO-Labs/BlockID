@@ -1,6 +1,9 @@
 import NNSType "./nnsTypes";
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
+import Time "mo:base/Time";
+import Int "mo:base/Int";
+import Nat64 "mo:base/Nat64";
 module {
     let NNS : NNSType.Self = actor "rrkah-fqaaa-aaaaa-aaaaq-cai";
 
@@ -54,6 +57,13 @@ module {
                             return false;
                         };
                         return false;
+                    };
+                    case "neuron-age" {
+                        //Verify age greater than 3 years old
+                        let age_in_seconds: Int = Int.abs(Nat64.toNat(data.aging_since_timestamp_seconds));
+                        let current_time = Time.now() / 1000000000;
+                        let age = current_time - age_in_seconds;
+                        return age > 3*365*24*60*60;
                     };
                     case _ {
                         return false;
