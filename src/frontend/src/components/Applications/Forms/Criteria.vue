@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue';
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import { toSimpleArray } from '@/plugins/common';
+import { ComparisonType } from '@/constants/backend';
+import { convertComparisonType } from '@/plugins/common';
 import {
     getProviders,
     updateCriteria,
@@ -15,6 +17,13 @@ const emit = defineEmits(['save', 'cancel']);
 const providers = ref([]);
 const localParams = ref([]);
 const loading = ref(false);
+const comparisonTypes = Object.values(ComparisonType);
+const additionalParams = ref({
+    selected: null,
+    comparisonType: null,
+    value: null,
+    maxValue: null
+});
 const form = ref({
     id: '_',
     name: '',
@@ -25,9 +34,26 @@ const form = ref({
     isVC: false,
     expirationTime: 0,
     providerParams: [],
-    providerArgs: []
+    providerArgs: [],
+    additionalParams: []
 });
 
+const initializeAdditionalParams = () => {
+    console.log('props.criteria', props.criteria);
+    try{
+        if (props.criteria?.additionalParams && props?.criteria?.additionalParams.length > 0) {
+            //moving key to selected
+            additionalParams.value = {
+                selected: convertComparisonType(props.criteria.additionalParams[0].comparisonType, true),
+                comparisonType: props.criteria.additionalParams[0].comparisonType,
+                value: Number(props.criteria.additionalParams[0].value),
+                maxValue: Number(props.criteria.additionalParams[0].maxValue)
+            };
+        }
+    } catch (error) {
+        console.log('Error initializing additional params', error);
+    }
+}
 const initializeArgs = () => {
     if (props.criteria) {
         form.value.providerArgs =
@@ -115,10 +141,31 @@ const fetchProviders = async () => {
     providers.value = toSimpleArray(await getProviders());
     initializeParams();
 };
-
+const clearAdditionalParams = () => {
+    additionalParams.value = {
+        selected: null,
+        comparisonType: null,
+        value: null,
+        maxValue: null
+    }
+}
 const saveCriteria = async () => {
     //Update providerId as element 0 of array
-
+    if (additionalParams.value.selected !== null) {
+        additionalParams.value.comparisonType = convertComparisonType(additionalParams.value.selected);
+        form.value.additionalParams = [
+            {
+                comparisonType: additionalParams.value.comparisonType,
+                value: additionalParams.value.value,
+                maxValue: additionalParams.value.maxValue ? [additionalParams.value.maxValue] : []
+            }
+        ]
+    }
+    //Remove additional params if no comparison type is selected
+    if(additionalParams.value.selected === null) {
+        form.value.additionalParams = [];
+    }
+    console.log('form value', form.value);
     form.value.providerId = [
         form.value.providerId ? form.value.providerId : ''
     ];
@@ -150,6 +197,7 @@ const saveCriteria = async () => {
 onMounted(() => {
     fetchProviders();
     initializeArgs();
+    initializeAdditionalParams();
 
     if (props?.criteria) {
         form.value = { ...props.criteria, validatorId: props.validatorId };
@@ -263,7 +311,7 @@ onMounted(() => {
                     </v-card-actions>
                 </v-card>
 
-                <v-card>
+                <v-card class="mt-4">
                     <v-card-title>
                         <span class="text-h6 mb-4"
                             >Arguments
@@ -322,6 +370,33 @@ onMounted(() => {
                             <v-icon>mdi-plus</v-icon> New Argument</v-btn
                         >
                     </v-card-actions>
+                </v-card>
+
+                <v-card class="mt-4">
+                    <v-card-title class="text-danger">Criteria conditions</v-card-title>
+                    <v-card-subtitle>
+                        This criteria will be applied only if the conditions are met
+                    </v-card-subtitle>
+                    <v-card-text>
+                        <v-select
+                            v-model="additionalParams.selected"
+                            :items="comparisonTypes"
+                            label="Comparison Type"
+                            clearable
+                            @click:clear="clearAdditionalParams()"
+                        ></v-select>
+                        <v-text-field
+                            v-model.number="additionalParams.value"
+                            label="Value"
+                            type="number"
+                        ></v-text-field>
+                        <v-text-field
+                            v-if="additionalParams.selected === ComparisonType.Between"
+                            v-model.number="additionalParams.maxValue"
+                            label="Max Value (Less than or equal this value)"
+                            type="number"
+                        ></v-text-field>
+                    </v-card-text>
                 </v-card>
 
                 <!-- <ParamsManager :providers="providers" :providerParams="form.providerParams" :providerId="form.providerId" @updateProviderParams="updateProviderParams" v-model="form.providerParams" /> -->

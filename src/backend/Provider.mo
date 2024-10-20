@@ -44,7 +44,7 @@ module {
                                     };
                                 };
                                 return {
-                                    isValid = await NNS.verifyNNS(_neuronId, "known-neuron", ?walletId);
+                                    isValid = await NNS.verifyNNS(_neuronId, "known-neuron", ?walletId, null);
                                     score = criteria.score;
                                 }
                             };
@@ -66,7 +66,7 @@ module {
                                     };
                                 };
                                 return {
-                                    isValid = await NNS.verifyNNS(_neuronId, "hot-keys", ?walletId);
+                                    isValid = await NNS.verifyNNS(_neuronId, "hot-keys", ?walletId, null);
                                     score = criteria.score;
                                 }
                             };
@@ -88,7 +88,7 @@ module {
                                     };
                                 };
                                 return {
-                                    isValid = await NNS.verifyNNS(_neuronId, "neuron-age", ?walletId);
+                                    isValid = await NNS.verifyNNS(_neuronId, "neuron-age", ?walletId, criteria.additionalParams);
                                     score = criteria.score;
                                 }
                             };

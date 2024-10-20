@@ -64,6 +64,7 @@ module {
         providerId: ?Text;//Map with the provider template id
         providerParams: ?[ProviderParams];
         providerArgs: ?[ProviderParams];//Split the arguments from the params
+        additionalParams: ?AdditionalParams;//Additional params for the criteria
         // templateId: Text;
         isVC: Bool;
         score: Nat;
@@ -171,5 +172,9 @@ module {
         verificationTime: Int;
         expirationTime: Int;
     };
-
+    public type AdditionalParams = {
+        comparisonType: ComparisonType;
+        value: Int;
+        maxValue: ?Int;
+    };
 }

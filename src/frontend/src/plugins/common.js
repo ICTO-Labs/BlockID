@@ -6,6 +6,7 @@ import { h } from 'vue';
 import { VChip } from 'vuetify/components';
 import Copy from '@/components/icons/Copy.vue'; // Giả sử bạn có component Copy
 import { VTooltip } from 'vuetify/components';
+import { ComparisonType } from '@/constants/backend';
 
 const isHex = (h) => {
     var regexp = /^[0-9a-fA-F]+$/;
@@ -153,3 +154,12 @@ export const templateParse = (template, placeholders) => {
         return h('span', { innerHTML: part });
     });
 };
+
+//Parse comparison type to text
+export function convertComparisonType(frontendType, reverse = false) {
+    if (!frontendType) return null;
+    if (reverse) {
+        return Object.keys(frontendType)[0];
+    }
+    return { [frontendType]: null };
+}

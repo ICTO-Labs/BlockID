@@ -4,6 +4,8 @@ import Option "mo:base/Option";
 import Time "mo:base/Time";
 import Int "mo:base/Int";
 import Nat64 "mo:base/Nat64";
+import Utils "../../Utils";
+import Types "../../Types";
 module {
     let NNS : NNSType.Self = actor "rrkah-fqaaa-aaaaa-aaaaq-cai";
 
@@ -28,7 +30,7 @@ module {
             return #Err({error_message = "Unknown"; error_type = 0});
         };
     };
-    public func verifyNNS(neuron_id : Nat64, key : Text, walletId : ?Principal) : async Bool {
+    public func verifyNNS(neuron_id : Nat64, key : Text, walletId : ?Principal, additionalParams : ?Types.AdditionalParams) : async Bool {
         switch(await get_full_neuron(neuron_id)){
             case (#Ok(data)) {
                 switch(key){
@@ -63,7 +65,12 @@ module {
                         let age_in_seconds: Int = Int.abs(Nat64.toNat(data.aging_since_timestamp_seconds));
                         let current_time = Time.now() / 1000000000;
                         let age = current_time - age_in_seconds;
-                        return age > 3*365*24*60*60;
+                        switch (additionalParams) {
+                            case (null) return age > 3*365*24*60*60; // if no additionalParams, consider it valid!! Keep default value
+                            case (?params) {
+                                return Utils.compareValues(age, params.value, params.comparisonType, params.maxValue);
+                            };
+                        };
                     };
                     case _ {
                         return false;
