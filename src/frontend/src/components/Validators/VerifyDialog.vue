@@ -45,7 +45,7 @@
         return validator.value?.criterias.map(criteria => ({
             ...criteria,
             parsedDescription: templateParse(criteria.description, placeholders.value)
-        })) || [];
+        })).sort((a, b) => Number(b.score) - Number(a.score)) || [];
     });
     const startVerification = async (criteria) => {
         console.log('startVerification:', criteria);
