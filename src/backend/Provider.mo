@@ -97,6 +97,28 @@ module {
                             };
                         };
                     };
+                    case "8-years-gang" {
+                        switch(providerParams){
+                            case (?params) {
+                                var _neuronId : Nat64 = 0;
+                                for (param in params.vals()) {
+                                    switch (param.key) {
+                                        case ("neuronId") {
+                                            _neuronId := textToNat64(param.value);
+                                        };
+                                        case _ {};
+                                    };
+                                };
+                                return {
+                                    isValid = await NNS.verifyNNS(_neuronId, "8-years-gang", ?walletId, criteria.additionalParams);
+                                    score = criteria.score;
+                                }
+                            };
+                            case (null) {
+                                return { isValid = false; score = 0 };
+                            };
+                        };
+                    };
                     case _ return { isValid = false; score = 0 };
                 };
             };

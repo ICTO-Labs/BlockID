@@ -32,21 +32,21 @@ module {
     };
     public func verifyNNS(neuron_id : Nat64, key : Text, walletId : ?Principal, additionalParams : ?Types.AdditionalParams) : async Bool {
         switch(await get_full_neuron(neuron_id)){
-            case (#Ok(data)) {
+            case (#Ok(neuronInfo)) {
                 switch(key){
                     case "known-neuron" {
-                        let _data = Option.get(data.known_neuron_data, {name = ""; description = ""});
+                        let _data = Option.get(neuronInfo.known_neuron_data, {name = ""; description = ""});
                         if(_data.name != ""){
                             return true;
                         };
                         return false;
                     };
                     case "hot-keys" {
-                        if(data.hot_keys.size() > 0){
+                        if(neuronInfo.hot_keys.size() > 0){
                             //Check if walletId in hotkeys
                             switch(walletId){
                                 case (?id) {
-                                    for (hotkey in data.hot_keys.vals()){
+                                    for (hotkey in neuronInfo.hot_keys.vals()){
                                         if(Principal.equal(hotkey, id)){
                                             return true;
                                         };
@@ -62,14 +62,56 @@ module {
                     };
                     case "neuron-age" {
                         //Verify age greater than 3 years old
-                        let age_in_seconds: Int = Int.abs(Nat64.toNat(data.aging_since_timestamp_seconds));
-                        let current_time = Time.now() / 1000000000;
-                        let age = current_time - age_in_seconds;
+                        let _current_time = Time.now() / 1000000000;
+                        let age = switch (neuronInfo.dissolve_state) {
+                            case (?#DissolveDelaySeconds(_delay)) {
+                                Nat64.toNat(_delay);//Using dissolve delay as age
+                            };
+                            case (?#WhenDissolvedTimestampSeconds(_whenDissolved)) {
+                                // Neuron is dissolving
+                                // current_time - Nat64.toNat(neuronInfo.created_timestamp_seconds)
+                                0;
+                            };
+                            case (null) { 0 };
+                        };
                         switch (additionalParams) {
                             case (null) return age > 3*365*24*60*60; // if no additionalParams, consider it valid!! Keep default value
                             case (?params) {
                                 return Utils.compareValues(age, params.value, params.comparisonType, params.maxValue);
                             };
+                        };
+                    };
+                    case "8-years-gang" {
+                        let requiredTime = 8 * 365 * 24 * 60 * 60; // 8 years in seconds
+                        switch (neuronInfo.dissolve_state) {
+                            case (?#DissolveDelaySeconds(_delay)) {//Only accept dissolve delay (not dissolving)
+                                let age = Nat64.toNat(_delay);
+                                switch (additionalParams) {
+                                    case (null) { return age >= requiredTime; };
+                                    case (?params) {
+                                        return age >= requiredTime and Utils.compareValues(Nat64.toNat(neuronInfo.cached_neuron_stake_e8s/100000000), params.value, params.comparisonType, params.maxValue);
+                                    };
+                                };
+                            };
+                            case (_) { return false; };
+                        };
+                    };
+                    case "golden-sunset" {
+                        let requiredTime = 8 * 365 * 24 * 60 * 60; // 8 years in seconds
+                        switch (neuronInfo.dissolve_state) {
+                            //Only check if neuron is dissolving
+                            case (?#WhenDissolvedTimestampSeconds(_dateToDissolve)) {
+                                let age = 0;//Nat64.toNat(dateToDissolve) - Nat64.toNat(neuronInfo.created_timestamp_seconds);
+                                switch (additionalParams) {
+                                    case (null) { return age >= requiredTime and neuronInfo.cached_neuron_stake_e8s >= 100_00000000; };
+                                    case (?params) {
+                                        let minimumStake: Nat64 = Utils.intToNat64(params.value) * 100000000; // Convert ICP to E8S
+                                        return age >= requiredTime and neuronInfo.cached_neuron_stake_e8s >= minimumStake and 
+                                            Utils.compareValues(Nat64.toNat(neuronInfo.cached_neuron_stake_e8s), params.value, params.comparisonType, params.maxValue);
+                                    };
+                                };
+                            };
+                            case (_) { return false; };
                         };
                     };
                     case _ {
