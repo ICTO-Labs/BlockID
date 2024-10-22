@@ -274,3 +274,11 @@ export const removeProvider = async (providerId) => {
         return {err: error};
     }
 };
+export const getTotalVerifiedWallets = async () => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getTotalVerifiedWallets();
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};

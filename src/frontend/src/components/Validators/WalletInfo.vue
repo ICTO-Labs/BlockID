@@ -18,10 +18,11 @@
     // const myLinkedWallets = ref([]);
     const myPendingLinkRequests = ref([]);
     const walletStore = useWalletStore();
-    const { principalId, accountId, isConnected, walletScore, currentWallet } = storeToRefs(walletStore);
+    const { principalId, accountId, isConnected, walletScore, currentWallet, totalVerifiedWallets } = storeToRefs(walletStore);
     const loading = ref(false);
     const getScore = async ()=>{
         if(!isConnected.value) return;
+        walletStore.getTotalWallets();
         await walletStore.getUserScore(props.applicationId);
         Notify.success('Score refreshed');
     }
@@ -136,6 +137,7 @@
     onMounted(async ()=>{
         _getMyLinkedWallets();
         _getMyPendingLinkRequests();
+        walletStore.getTotalWallets();
     })
 </script>
 <template>
@@ -156,9 +158,17 @@
                             >Refresh</v-tooltip
                         >
                     </v-btn>
+                    <v-chip label class="float-right pe-0 mt-1 bg-success" size="small" >
+                        <v-icon>mdi-check-decagram</v-icon> 
+                        Wallets  
+                        <v-chip size="small" class="font-weight-bold ms-1" label>{{ totalVerifiedWallets || 0 }}</v-chip>
+                                <v-tooltip activator="parent" location="top"
+                                >Total verified wallets</v-tooltip
+                            >
+                    </v-chip>
                 </template>
                 <template v-slot:subtitle>
-                    Normal, some applications may require at least 15 points to allow access
+                    <div class="text-wrap">Normal, some applications may require at least 15 points to allow access</div>
                 </template>
                 <v-card-item>
                         <v-sheet class="d-flex justify-space-between bg-transparent" width="100%">
@@ -167,7 +177,7 @@
                                 <div class="text-h2 text-orange font-weight-bold">{{ walletScore.totalScore || 0 }}</div>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="text-overline"> Your WalletScore</div>
+                                <div class="text-overline"> Your Wallet Score</div>
                                 <div class="text-green text-h3 font-weight-bold">{{ walletScore.primaryScore || 0 }}</div>
                             </div>
                             <div class="flex-grow-1">

@@ -349,7 +349,7 @@
                                         :loading="loading"
                                     >
                                         <v-chip variant="text" v-if="verifiedCriterias[criteria.id]">
-                                            <v-icon>mdi-refresh</v-icon> Verify 
+                                            <v-icon>mdi-refresh</v-icon> Re-verify 
                                         </v-chip>
                                         <v-chip variant="text" v-else><v-icon>mdi-arrow-right</v-icon> Verify</v-chip>
                                         <v-tooltip activator="parent" location="top" v-if="verifiedCriterias[criteria.id]">Re-verify this criteria</v-tooltip>
