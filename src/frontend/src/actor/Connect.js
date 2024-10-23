@@ -2,6 +2,7 @@ import { storeToRefs } from 'pinia';
 import { actor } from "./Actor";
 import { useWalletStore } from '@/store/walletStore'
 import { preloadIdls, mapIdls } from './didList';
+import authService from '@/services/authService';
 class CreateActor {
     _canister = false;
     _idl = false;
@@ -27,6 +28,13 @@ class CreateActor {
                                 target._actor = await window.ic.plug.createActor({
                                     canisterId: target._canister,
                                     interfaceFactory: target._idl,
+                                });
+                            }else if(wallet.value == "NFID"){
+                                const nfid = await authService.getNfid();
+                                target._actor = await actor.create({
+                                    canisterId: target._canister,
+                                    idlFactory: target._idl,
+                                    identity: nfid.getIdentity(),
                                 });
                             }else{
                                 target._actor = await actor.create({

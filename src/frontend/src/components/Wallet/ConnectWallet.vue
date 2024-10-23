@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import authService from '@/services/authService';
 import { useWalletStore } from '@/store/walletStore';
 import { useDialogStore } from '@/store/dialogStore';
+import Notify from '@/plugins/notify';
 const walletStore = useWalletStore();
 const loading = ref({});
 const dialogStore = useDialogStore();
@@ -11,9 +12,11 @@ const handleConnect = async (walletId) => {
     loading.value[walletId] = true;
     try {
         const _walletInfo = await authService.connect(walletId);
-        if(_walletInfo.success){
+        if(_walletInfo && _walletInfo.success){
             dialogStore.closeDialog('connectWallet');
             walletStore.setWalletInfo(_walletInfo);
+        }else{
+            Notify.error("Unable to connect to wallet!");
         }
     } catch (error) {
         console.error('Error:', error);

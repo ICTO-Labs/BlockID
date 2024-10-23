@@ -46,6 +46,7 @@ const handleLogout = async () => {
         icon: 'mdi-alert'
     });
     if (confirm) {
+        await authService.logout();
         walletStore.clearWalletInfo(); //Logout and clear wallet info
         Dialog.close('confirm');
         Notify.success('Logout successfully!');

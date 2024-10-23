@@ -225,7 +225,6 @@ export const getMyLinkedWallets = async () => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getMyLinkedWallets();
     } catch (error) {
-        console.log(error);
         return [];
     }
 };
@@ -234,7 +233,6 @@ export const getPendingLinkRequests = async () => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').getPendingLinkRequests();
     } catch (error) {
-        console.log(error);
         return [];
     }
 };

@@ -66,7 +66,6 @@ export const useWalletStore = defineStore('wallet', {
         },
         async getUserScore(applicationId) {
             let _score = await getCurrentWalletScore(this.principalId, applicationId);
-            console.log('_score', _score);
             if(_score){
                 this.walletScore = {
                     primaryScore: Number(_score.primaryScore) || 0,
@@ -81,18 +80,23 @@ export const useWalletStore = defineStore('wallet', {
             this.saveToLocalStorage();
         },
         saveToLocalStorage() {
-            localStorage.setItem('walletInfo', JSON.stringify({
-                principalId: this.principalId,
-                accountId: this.accountId,
-                isConnected: this.isConnected,
-                balance: this.balance,
-                score: this.score,
-                totalVerifiedWallets: this.totalVerifiedWallets,
-                wallet: this.wallet,
-                connectedWallets: this.connectedWallets,
-                currentWallet: this.currentWallet,
-                walletInfo: this.walletInfo,
-            }));
+            try {
+                const dataToSave = {
+                    principalId: this.principalId,
+                    accountId: this.accountId,
+                    isConnected: this.isConnected,
+                    balance: this.balance,
+                    score: this.score,
+                    totalVerifiedWallets: this.totalVerifiedWallets,
+                    wallet: this.wallet,
+                    connectedWallets: this.connectedWallets,
+                    currentWallet: this.currentWallet,
+                    walletInfo: this.walletInfo,
+                };
+                localStorage.setItem('walletInfo', JSON.stringify(dataToSave));
+            } catch (error) {
+                console.error('Error save to local storage:', error);
+            }
         },
         loadFromLocalStorage() {
             const storedInfo = localStorage.getItem('walletInfo');

@@ -1,6 +1,7 @@
 import { AuthClient } from '@dfinity/auth-client';
 import { principalToAccountId } from '@/plugins/common';
-import { END_POINT, INTERNET_INDENTITY, DEVRIVATION_ORIGIN } from '@/config';
+import { NFID } from "@nfid/embed";
+import { END_POINT, INTERNET_INDENTITY, DEVRIVATION_ORIGIN, BACKEND_CANISTER_ID, FRONTEND_CANISTER_ID, VC_VALIDATOR_CANISTER_ID } from '@/config';
 const defaultOptions = {
     createOptions: {
         idleOptions: {
@@ -12,6 +13,9 @@ const defaultOptions = {
         derivationOrigin: DEVRIVATION_ORIGIN,
     }
 };
+
+const NFID_APP_NAME = "BlockID";
+const NFID_APP_LOGO = "https://icto.app/media/logos/logo.png";
 
 class AuthService {
     constructor() { }
@@ -30,9 +34,17 @@ class AuthService {
         }
     }
 
+    async logout(){
+        var walletInfo = JSON.parse(localStorage.getItem("walletInfo"));
+        if(walletInfo.wallet === 'NFID'){
+            const nfid = await this.getNfid();
+            await nfid.logout();
+        }
+    }
+
     checkLoginStatus() {
         var walletInfo = JSON.parse(localStorage.getItem("walletInfo"));
-        if (walletInfo.isConnected) {
+        if (walletInfo && walletInfo.isConnected) {
             switch (walletInfo.wallet) {
                 case "PLUG":
                     return (async () => {
@@ -95,6 +107,30 @@ class AuthService {
                         }
                     })();
                     break;
+                case "NFID":
+                    return (async () => {
+                        const nfid =  await this.getNfid();
+                        const isAuthenticated = await nfid.isAuthenticated;
+                        if(isAuthenticated) {
+                            const identity = nfid.getIdentity();
+                            return {
+                                success: true,
+                                message: 'Connected to NFID',
+                                identity: null,
+                                principalId: identity.getPrincipal().toString(),
+                                accountId: principalToAccountId(
+                                    identity.getPrincipal().toString(),
+                                    0
+                                ),
+                                wallet: 'NFID'
+                            };
+                        } else {
+                            return {
+                                success: false,
+                                message: 'NFID not connected',
+                            };
+                        }
+                    })();
                 default:
                     break;
             }
@@ -144,12 +180,34 @@ class AuthService {
     }
 
     async Nfid() {
-        dialogStore.openDialog('alert', {
-            title: 'Warning',
-            message: 'Nfid is not supported yet',
-            color: 'warning',
-            icon: 'mdi-alert'
-        });
+        try{
+            const nfid = await NFID.init({
+                application: {
+                    name: NFID_APP_NAME,
+                    logo: NFID_APP_LOGO
+                },
+                keyType: 'Ed25519',
+                idleOptions: { idleTimeout: 24 * 60 * 60 * 1000 }
+            });
+            const targetCanisterIds = [BACKEND_CANISTER_ID, FRONTEND_CANISTER_ID, VC_VALIDATOR_CANISTER_ID];
+            const identity = await nfid.getDelegation({
+                targets: targetCanisterIds.length ? targetCanisterIds : undefined,
+                derivationOrigin: DEVRIVATION_ORIGIN,
+            });
+            return {
+                success: true,
+                message: 'Connected to NFID',
+                identity: null,
+                principalId: identity.getPrincipal().toString(),
+                accountId: principalToAccountId(
+                    identity.getPrincipal().toString(),
+                    0
+                ),
+                wallet: 'NFID'
+            };
+        } catch (e) {
+            console.log('NFID ERROR:', e);
+        }
     }
 
     async plugWallet() {
@@ -189,6 +247,15 @@ class AuthService {
             console.log('PLUG ERROR:', e);
         }
     };
+
+    async getNfid(){
+        return await NFID.init({
+            application: {
+                name: NFID_APP_NAME,
+                logo: NFID_APP_LOGO
+            }
+        });
+    }
 }
 
 const authService = new AuthService();
