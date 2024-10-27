@@ -17,7 +17,6 @@ import Float "mo:base/Float";
 import Types "Types";
 import Provider "Provider";
 import Utils "Utils";
-
 actor BlockID {
 
     //Store data

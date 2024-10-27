@@ -13,6 +13,7 @@ import Nat32 "mo:base/Nat32";
 //Import validator module
 import NFT_EXT_V1 "providers/nft-ext-v1";
 import NNS "providers/nns/nns";
+import Ledger "providers/ledger/transaction";
 module {
     public func getNeuronIds() : async [Nat64] {
         return await NNS.get_neuron_ids();
@@ -117,6 +118,24 @@ module {
                             case (null) {
                                 return { isValid = false; score = 0 };
                             };
+                        };
+                    };
+                    case "spent-volume" {
+                        return {
+                            isValid = await Ledger.verifyICPTransaction(walletId, "spent-volume", criteria.additionalParams);
+                            score = criteria.score;
+                        };
+                    };
+                    case "count-tx" {
+                        return {
+                            isValid = await Ledger.verifyICPTransaction(walletId, "count-tx", criteria.additionalParams);
+                            score = criteria.score;
+                        };
+                    };
+                    case "volume" {
+                        return {
+                            isValid = await Ledger.verifyICPTransaction(walletId, "volume", criteria.additionalParams);
+                            score = criteria.score;
                         };
                     };
                     case _ return { isValid = false; score = 0 };
