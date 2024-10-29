@@ -9,6 +9,11 @@
             "package": "validate",
             "candid": "src/rust/validate/validate.did"
         },
+        "issuer": {
+            "type": "rust",
+            "package": "issuer",
+            "candid": "src/rust/issuer/issuer.did"
+        },
         "simulator": {
             "main": "src/backend/simulator.mo",
             "type": "motoko"
