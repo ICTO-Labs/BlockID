@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "src/rust/validate",
+    "src/rust/issuer",
 ]
 resolver = "2"
 [profile.release]

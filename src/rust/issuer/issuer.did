@@ -1,0 +1,121 @@
+type AddEventRequest = record {
+  registration_code : opt text;
+  event_name : text;
+};
+type AddEventResponse = record {
+  registration_code : text;
+  created_timestamp_s : nat32;
+  event_name : text;
+};
+type ArgumentValue = variant { Int : int32; String : text };
+type CredentialSpec = record {
+  arguments : opt vec record { text; ArgumentValue };
+  credential_type : text;
+};
+type DerivationOriginData = record { origin : text };
+type DerivationOriginError = variant {
+  Internal : text;
+  UnsupportedOrigin : text;
+};
+type DerivationOriginRequest = record { frontend_hostname : text };
+type EarlyAdopterResponse = record {
+  joined_timestamp_s : nat32;
+  events : vec UserEventData;
+};
+type EventData = record {
+  registration_code : opt text;
+  created_timestamp_s : nat32;
+  event_name : text;
+};
+type GetCredentialRequest = record {
+  signed_id_alias : SignedIdAlias;
+  prepared_context : opt blob;
+  credential_spec : CredentialSpec;
+};
+type HttpRequest = record {
+  url : text;
+  method : text;
+  body : blob;
+  headers : vec record { text; text };
+  certificate_version : opt nat16;
+};
+type HttpResponse = record {
+  body : blob;
+  headers : vec record { text; text };
+  status_code : nat16;
+};
+type Icrc21ConsentInfo = record { consent_message : text; language : text };
+type Icrc21ConsentPreferences = record { language : text };
+type Icrc21Error = variant {
+  GenericError : record { description : text; error_code : nat };
+  UnsupportedCanisterCall : Icrc21ErrorInfo;
+  ConsentMessageUnavailable : Icrc21ErrorInfo;
+};
+type Icrc21ErrorInfo = record { description : text };
+type Icrc21VcConsentMessageRequest = record {
+  preferences : Icrc21ConsentPreferences;
+  credential_spec : CredentialSpec;
+};
+type IssueCredentialError = variant {
+  Internal : text;
+  SignatureNotFound : text;
+  InvalidIdAlias : text;
+  UnauthorizedSubject : text;
+  UnknownSubject : text;
+  UnsupportedCredentialSpec : text;
+};
+type IssuedCredentialData = record { vc_jws : text };
+type IssuerInit = record {
+  derivation_origin : text;
+  idp_canister_ids : vec principal;
+  ic_root_key_der : blob;
+  frontend_hostname : text;
+};
+type ListEventsResponse = record { events : vec EventData };
+type PrepareCredentialRequest = record {
+  signed_id_alias : SignedIdAlias;
+  credential_spec : CredentialSpec;
+};
+type PreparedCredentialData = record { prepared_context : opt blob };
+type RegisterError = variant { Internal : text; External : text };
+type RegisterUserEventData = record {
+  registration_code : text;
+  event_name : text;
+};
+type RegisterUserRequest = record { event_data : opt RegisterUserEventData };
+type Result = variant { Ok : AddEventResponse; Err : RegisterError };
+type Result_1 = variant {
+  Ok : DerivationOriginData;
+  Err : DerivationOriginError;
+};
+type Result_2 = variant {
+  Ok : record { text; text };
+  Err : IssueCredentialError;
+};
+type Result_3 = variant {
+  Ok : IssuedCredentialData;
+  Err : IssueCredentialError;
+};
+type Result_4 = variant { Ok : ListEventsResponse; Err : RegisterError };
+type Result_5 = variant {
+  Ok : PreparedCredentialData;
+  Err : IssueCredentialError;
+};
+type Result_6 = variant { Ok : EarlyAdopterResponse; Err : RegisterError };
+type Result_7 = variant { Ok : text; Err : text };
+type Result_8 = variant { Ok : Icrc21ConsentInfo; Err : Icrc21Error };
+type SignedIdAlias = record { credential_jws : text };
+type UserEventData = record { joined_timestamp_s : nat32; event_name : text };
+service : (opt IssuerInit) -> {
+  add_event : (AddEventRequest) -> (Result);
+  configure : (IssuerInit) -> ();
+  derivation_origin : (DerivationOriginRequest) -> (Result_1);
+  get_config_values : () -> (Result_2) query;
+  get_credential : (GetCredentialRequest) -> (Result_3) query;
+  http_request : (HttpRequest) -> (HttpResponse) query;
+  list_events : () -> (Result_4);
+  prepare_credential : (PrepareCredentialRequest) -> (Result_5);
+  register_early_adopter : (RegisterUserRequest) -> (Result_6);
+  test_wallet_score : (principal) -> (Result_7);
+  vc_consent_message : (Icrc21VcConsentMessageRequest) -> (Result_8);
+}
