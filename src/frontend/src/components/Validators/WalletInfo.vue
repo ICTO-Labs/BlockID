@@ -207,7 +207,7 @@
                 <v-card-text>
                     <v-list-item>
                         <v-list-item class="">Principal ID: {{principalId || '---'}} <Copy :text="principalId" :item="'Principal ID'"/></v-list-item>
-                        <v-list-item class="">Account ID: {{accountId || '---'}} <Copy :text="accountId" :item="'Account ID'"/></v-list-item>
+                        <v-list-item class="text-link">Account ID: <a :href="`https://dashboard.internetcomputer.org/account/${accountId}`" target="_blank">{{accountId || '---'}}<v-tooltip activator="parent" location="top">Show on Dashboard</v-tooltip></a> <Copy :text="accountId" :item="'Account ID'"/></v-list-item>
                     </v-list-item>
                     
                     <v-list-item>

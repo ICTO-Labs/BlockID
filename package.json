@@ -21,5 +21,8 @@
         "@dfinity/ledger-icp": "^2.4.0",
         "@dfinity/nns": "^6.0.0",
         "remove": "^0.1.5"
+    },
+    "devDependencies": {
+        "ic-stoic-identity": "^6.0.0"
     }
 }

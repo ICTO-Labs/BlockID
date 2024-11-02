@@ -28,6 +28,12 @@ export const WALLETS = {
         logo: 'https://app.icpswap.com/images/connect/NFID.svg',
         id: 'NFID',
         default: false
+    },
+    'STOIC': {
+        name: 'Stoic Wallet',
+        logo: 'https://entrepot.app/stoic.png',
+        id: 'STOIC',
+        default: false
     }
 };
 

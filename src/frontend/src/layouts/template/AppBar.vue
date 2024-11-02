@@ -14,6 +14,8 @@ const walletStore = useWalletStore();
 const { principalId, accountId, balance, isConnected, shortPrincipal, wallet } =
     storeToRefs(walletStore);
 import  {idlFactory as nnsIDL}  from '@/actor/did/nns.did';
+import { principalToAccountId } from '../../plugins/common';
+import { ISSUER_CANISTER_ID } from '@/config';
 const theme = useTheme();
 
 const router = useRouter();
@@ -31,12 +33,24 @@ function toggleTheme() {
 const handleConnect = () => {
     Dialog.connectWallet();
 };
+const toHexString = (array) => {
+    return array.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+};
+function uint8ArrayToHex(uint8Array) {
+  return Buffer.from(uint8Array).toString('hex');
+}
+const registerEarlyAdopter = async () => {
+    let _register = await Connect.canister(ISSUER_CANISTER_ID, 'issuer').register_early_adopter({event_data: [{event_name: 'TEST', registration_code: '1234'}]});
+    console.log('_register', _register);
+}
 const checkConnect = async () => {
 
     console.log('check Connect');
-    let wallet = await Connect.canister('rrkah-fqaaa-aaaaa-aaaaq-cai', nnsIDL, false).get_full_neuron(BigInt('18158107153719370439'));
+    let neuronInfo = await Connect.canister('rrkah-fqaaa-aaaaa-aaaaq-cai', nnsIDL, false).get_full_neuron(BigInt('18158107153719370439'));
     // let wallet = await Connect.canister('rrkah-fqaaa-aaaaa-aaaaq-cai', nnsIDL, false).get_neuron_ids();
-    console.log('get_neuron_ids', wallet);
+    console.log('get_neuron_ids', neuronInfo);
+    console.log('neuronInfo controller', (neuronInfo.Ok.controller[0].toText()));
+    console.log('neuronInfo accountId', principalToAccountId(neuronInfo.Ok.controller[0]));
 };
 const handleLogout = async () => {
     const confirm = await Dialog.confirm({
@@ -64,13 +78,30 @@ const toggleDrawer = () => {
         <template v-slot:prepend>
             <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
         </template>
+        <div class="d-flex align-center px-1">
+            <v-img @click="goMain()"
+                :src="'/images/logo.png'"
+                class="rounded-lg bg-white pt-2 ps-2 d-block d-sm-none"
+                max-width="42"
+                width="42"
+                contain
+            ></v-img>
+            
+            <v-img @click="goMain()"
+                :src="'/images/logo-vertical.png'"
+                class="rounded-lg pt-2 ps-2 d-none d-sm-block"
+                max-width="142"
+                width="142"
+                contain
+            ></v-img>
 
-        <v-app-bar-title @click="goMain()"
-            >{{ projectStore.projectTitle }}
-            <span class="text-subtitle-2 ml-1 d-none d-sm-inline">{{
+        </div>
+        <v-app-bar-title>
+<!--             
+            <span class="text-subtitle-2 d-none d-sm-inline">{{
                 projectStore.desc
-            }}</span></v-app-bar-title
-        >
+            }}</span> -->
+        </v-app-bar-title>
 
         <template v-slot:append>
             <!-- Dark Mode -->
@@ -115,7 +146,7 @@ const toggleDrawer = () => {
                 </template>
 
                 <v-list density="compact">
-                    <v-list-item to="/account">
+                    <v-list-item @click.stop="registerEarlyAdopter">
                         <template v-slot:prepend>
                             <v-icon icon="mdi-account"></v-icon>
                         </template>
@@ -125,7 +156,7 @@ const toggleDrawer = () => {
                         <template v-slot:prepend>
                             <v-icon icon="mdi-cog"></v-icon>
                         </template>
-                        <v-list-item-title>Setting</v-list-item-title>
+                        <v-list-item-title>Settings</v-list-item-title>
                     </v-list-item>
                     <v-divider></v-divider>
                     <v-list-item

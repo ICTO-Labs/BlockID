@@ -31,14 +31,6 @@ const menus = ref([
             :rail="drawer"
             v-model="isDrawerOpen"
         >
-            <v-avatar
-                color="grey-darken-3"
-                size="42"
-                class="d-block text-center mx-auto mb-9"
-                ><span class="text-h4">B</span></v-avatar
-            >
-
-            <v-divider></v-divider>
             <v-list density="compact" nav>
                 <v-list-item
                     v-for="item in menus"
