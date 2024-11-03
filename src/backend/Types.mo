@@ -19,6 +19,7 @@ module {
     public type VerificationResult = {
         isValid: Bool;
         score: Nat;
+        message: Text;
     };
 
     public type ProviderParamsBK = {
@@ -118,6 +119,16 @@ module {
         criteriaId: CriteriaId;
         score: Nat;
         verified: Bool;
+        verificationTime: ?Int;
+        expirationTime: ?Int;
+    };
+
+    //new CriteriaScore with message
+    public type CriteriaScoreWithMessage = {
+        criteriaId: CriteriaId;
+        score: Nat;
+        verified: Bool;
+        message: Text;
         verificationTime: ?Int;
         expirationTime: ?Int;
     };

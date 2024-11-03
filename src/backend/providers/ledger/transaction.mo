@@ -3,6 +3,8 @@ import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Array "mo:base/Array";
 import Nat64 "mo:base/Nat64";
+import Nat "mo:base/Nat";
+import Int "mo:base/Int";
 import Float "mo:base/Float";
 import Types "../../Types";
 import Utils "../../Utils";
@@ -76,12 +78,13 @@ module {
         };
     };
     
-    public func verifyICPTransaction(walletId : Principal, key: Text, additionalParams : ?Types.AdditionalParams) : async Bool {
+    public func verifyICPTransaction(walletId : Principal, key: Text, additionalParams : ?Types.AdditionalParams) : async Types.VerificationResult {
         let _volume = await countTransactions(walletId, key);
         switch (additionalParams) {
-            case (null) return _volume > 0; // if no additionalParams, consider it valid!! Keep default value
+            case (null) return { isValid = _volume > 0; score = 1; message = "You have " # key # ": " # debug_show(_volume) # ", required: 0" }; // if no additionalParams, consider it valid!! Keep default value
             case (?params) {
-                return Utils.compareValues(_volume, params.value, params.comparisonType, params.maxValue);
+                let _haveMax = if(params.maxValue != null) { " to " # debug_show(params.maxValue) } else {""};
+                return { isValid = Utils.compareValues(_volume, params.value, params.comparisonType, params.maxValue); score = 1; message = "Your " # key # ": " # debug_show(_volume) # ", required: " # debug_show(params.value) # " " # _haveMax };
             };
         };
     };

@@ -364,6 +364,7 @@ actor BlockID {
                             criteriaId = vcCriteria.id;
                             score = vcCriteria.score;
                             verified = true;
+                            message = "";
                             verificationTime = ?now;
                             expirationTime = ?calculateExpirationTime(vcCriteria.expirationTime);
                         };
@@ -389,12 +390,13 @@ actor BlockID {
         }
     };
     //Verify single criteria
-    private func _verifySingleCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider, params: ?[Types.ProviderParams]) : async Types.CriteriaScore {
+    private func _verifySingleCriteria(walletId: Types.WalletId, criteria: Types.Criteria, provider: Types.Provider, params: ?[Types.ProviderParams]) : async Types.CriteriaScoreWithMessage {
         let now = Time.now();
         let _defaultScore = {
             criteriaId = criteria.id;
             score = 0;
             verified = false;
+            message = "";
             verificationTime = null;
             expirationTime = null;
         };
@@ -417,7 +419,15 @@ actor BlockID {
                 switch (verificationParamsMap.get(paramsKey)) {
                     case (?existingParams) {
                     if (existingParams.walletId != walletId and existingParams.expirationTime > now) {
-                        return _defaultScore; // Params already used for another wallet and not expired
+                        //add message
+                        return {
+                            criteriaId = criteria.id;
+                            score = 0;
+                            verified = false;
+                            message = "Params already used for another wallet!";
+                            verificationTime = null;
+                            expirationTime = null;
+                        }; // Params already used for another wallet and not expired
                     };
                 };
                     case (null) { };
@@ -430,8 +440,9 @@ actor BlockID {
             if (result.isValid) {
                 let score = {
                     criteriaId = criteria.id;
-                    score = result.score;
+                    score = criteria.score;//use criteria score instead of provider score
                     verified = result.isValid;
+                    message = result.message;
                     verificationTime = ?now;
                     expirationTime = ?calculateExpirationTime(criteria.expirationTime);
                 };
@@ -453,6 +464,15 @@ actor BlockID {
                 };
 
                 return score;
+            }else{
+                return {
+                    criteriaId = criteria.id;
+                    score = 0;
+                    verified = false;
+                    message = result.message;
+                    verificationTime = null;
+                    expirationTime = null;
+                };
             };
         };
 
@@ -545,6 +565,7 @@ actor BlockID {
             case (_, null) { #err("Validator not found") };
             case (?_, ?validator) {
                 var criteriaScores : [Types.CriteriaScore] = [];
+                var message : Text = "";
                 for (criteriaId in criteriaIds.vals()) {
                     switch (Array.find(validator.criterias, func (c: Types.Criteria) : Bool { c.id == criteriaId })) {
                         case null { /* Skip if criteria not found */ };
@@ -561,11 +582,21 @@ actor BlockID {
                                 } };
                                 case (?p) { p };
                             };
-                            let criteriaScore = await _verifySingleCriteria(walletId, criteria, provider, params);
+                            let criteriaScore: Types.CriteriaScoreWithMessage = await _verifySingleCriteria(walletId, criteria, provider, params);
                             //Only add verified criteria
                             if(criteriaScore.verified == true and criteriaScore.score > 0){
-                                criteriaScores := Array.append(criteriaScores, [criteriaScore]);
+                                //Create criteria score without message
+                                let criteriaScoreWithoutMessage: Types.CriteriaScore = {
+                                    criteriaId = criteriaScore.criteriaId;
+                                    score = criteriaScore.score;
+                                    verified = criteriaScore.verified;
+                                    verificationTime = criteriaScore.verificationTime;
+                                    expirationTime = criteriaScore.expirationTime;
+                                };
+                                criteriaScores := Array.append(criteriaScores, [criteriaScoreWithoutMessage]);
                                 await* updateVerificationStats(walletId, applicationId, criteriaScore.score);
+                            }else{
+                                message := criteriaScore.message;
                             };
                         };
                     };
@@ -573,7 +604,11 @@ actor BlockID {
 
                 updateWalletScore(walletId, applicationId, validatorId, criteriaScores);
                 let totalScore = Array.foldLeft<Types.CriteriaScore, Nat>(criteriaScores, 0, func (acc, cs) { acc + cs.score });
-                #ok(totalScore)
+                if(totalScore == 0){
+                    return #err(message);
+                }else{
+                    return #ok(totalScore);
+                };
             };
         }
     };

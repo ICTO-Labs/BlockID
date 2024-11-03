@@ -109,7 +109,12 @@
                 walletStore.getUserScore(props.applicationId);//Update score
                 Notify.success('Verification successful: You got ' + _result.ok + ' points from ' + validator.value.name + ' validator');
             }else{
-                Notify.error('Verification failed: Please try again');
+                Dialog.alert({
+                    title: 'Verification failed',
+                    message: _result && _result.err ? _result.err : 'Unknown error, please try again later',
+                    color: 'error',
+                    icon: 'mdi-information-outline'
+                });
             }
             getVerifiedData();
             loading.value = false;
@@ -284,17 +289,9 @@
             </v-sheet>
         </v-card-text>
         <v-card-text>
-            <v-timeline side="end" density="compact" width="100%">
-                <v-timeline-item
-                    class="mb-4"
-                    width="100%"
-                    dot-color="primary"
-                    size="small"
-                    color="primary"
-                    v-for="criteria in parsedCriteriaDescriptions"
-                    :key="criteria.id"
-                >
-                    <v-card width="100%">
+            
+                    <v-card width="100%" class="mb-4 " hover v-for="criteria in parsedCriteriaDescriptions"
+                    :key="criteria.id">
                         <template v-slot:title>
                             <div class="text-subtitle-2 font-weight-bold">
                                 {{ criteria.name }}
@@ -359,8 +356,6 @@
                             </div>
                         </v-card-text>
                     </v-card>
-                </v-timeline-item>
-            </v-timeline>
         </v-card-text>
 
         <v-divider></v-divider>

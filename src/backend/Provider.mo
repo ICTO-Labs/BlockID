@@ -26,11 +26,13 @@ module {
                     case "nft-ext-v1" return {
                         isValid = true;
                         score = criteria.score;
+                        message = "";
                     };//await NFT_EXT_V1.verify(walletId, criteria.providerParams);
                     // More modules can be added here
                     case "autoValid" return {
                         isValid = true;
                         score = criteria.score;
+                        message = "";
                     };
                     case "known-neuron" {
                         switch(providerParams){
@@ -44,13 +46,10 @@ module {
                                         case _ {};
                                     };
                                 };
-                                return {
-                                    isValid = await NNS.verifyNNS(_neuronId, "known-neuron", ?walletId, null);
-                                    score = criteria.score;
-                                }
+                                return await NNS.verifyNNS(_neuronId, "known-neuron", ?walletId, criteria.additionalParams);
                             };
                             case (null) {
-                                return { isValid = false; score = 0 };
+                                return { isValid = false; score = 0; message = "Failed: Missing neuron ID parameter" };
                             };
                         };
                     };
@@ -66,13 +65,10 @@ module {
                                         case _ {};
                                     };
                                 };
-                                return {
-                                    isValid = await NNS.verifyNNS(_neuronId, "hot-keys", ?walletId, null);
-                                    score = criteria.score;
-                                }
+                                return await NNS.verifyNNS(_neuronId, "hot-keys", ?walletId, criteria.additionalParams);
                             };
                             case (null) {
-                                return { isValid = false; score = 0 };
+                                return { isValid = false; score = 0; message = "Failed: Missing neuron ID parameter" };
                             };
                         };
                     };
@@ -88,13 +84,10 @@ module {
                                         case _ {};
                                     };
                                 };
-                                return {
-                                    isValid = await NNS.verifyNNS(_neuronId, "neuron-age", ?walletId, criteria.additionalParams);
-                                    score = criteria.score;
-                                }
+                                return await NNS.verifyNNS(_neuronId, "neuron-age", ?walletId, criteria.additionalParams);
                             };
                             case (null) {
-                                return { isValid = false; score = 0 };
+                                return { isValid = false; score = 0; message = "Failed: Missing neuron ID parameter" };
                             };
                         };
                     };
@@ -110,35 +103,23 @@ module {
                                         case _ {};
                                     };
                                 };
-                                return {
-                                    isValid = await NNS.verifyNNS(_neuronId, "8-years-gang", ?walletId, criteria.additionalParams);
-                                    score = criteria.score;
-                                }
+                                return await NNS.verifyNNS(_neuronId, "8-years-gang", ?walletId, criteria.additionalParams);
                             };
                             case (null) {
-                                return { isValid = false; score = 0 };
+                                return { isValid = false; score = 0; message = "Failed: Missing neuron ID parameter" };
                             };
                         };
                     };
                     case "spent-volume" {
-                        return {
-                            isValid = await Ledger.verifyICPTransaction(walletId, "spent-volume", criteria.additionalParams);
-                            score = criteria.score;
-                        };
+                        return await Ledger.verifyICPTransaction(walletId, "spent-volume", criteria.additionalParams);
                     };
                     case "count-tx" {
-                        return {
-                            isValid = await Ledger.verifyICPTransaction(walletId, "count-tx", criteria.additionalParams);
-                            score = criteria.score;
-                        };
+                        return await Ledger.verifyICPTransaction(walletId, "count-tx", criteria.additionalParams);
                     };
                     case "volume" {
-                        return {
-                            isValid = await Ledger.verifyICPTransaction(walletId, "volume", criteria.additionalParams);
-                            score = criteria.score;
-                        };
+                        return await Ledger.verifyICPTransaction(walletId, "volume", criteria.additionalParams);
                     };
-                    case _ return { isValid = false; score = 0 };
+                    case _ return { isValid = false; score = 0; message = "Unknown module" };
                 };
             };
             case (#Remote(canisterId)) {
@@ -149,11 +130,11 @@ module {
             };
             case (#Custom(_moduleName)) {
                 switch (_moduleName) {
-                    case _ return { isValid = false; score = 0 };
+                    case _ return { isValid = false; score = 0; message = "Unknown module" };
                 };
             };
             case _ {
-                return { isValid = false; score = 0 };
+                return { isValid = false; score = 0; message = "Unknown module" };
             };
         };
         // let value = await getValue(walletId, criteria);
