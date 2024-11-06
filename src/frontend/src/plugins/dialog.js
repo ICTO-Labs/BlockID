@@ -70,15 +70,15 @@ const Dialog = {
     alert(options) {
         const dialogStore = useDialogStore();
         return new Promise((resolve) => {
-            dialogStore.openDialog('alert', {
+            dialogStore.openDialog('AlertDialog', {
                 title: options.title || 'Notify',
                 message: options.message,
                 confirmText: options.confirmText || 'Close',
-                color: options.color || 'info',
-                icon: options.icon || 'mdi-information',
-                maxWidth: options.maxWidth || 400,
+                color: options.color || 'gray',
+                icon: options.icon || 'mdi-information-outline',
+                maxWidth: options.maxWidth || 600,
                 onConfirm: () => {
-                    dialogStore.closeDialog('alert');
+                    dialogStore.closeDialog('AlertDialog');
                     resolve();
                 }
             });
