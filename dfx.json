@@ -34,6 +34,10 @@
             },
             "type": "custom",
             "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+        },
+        "whitelist": {
+            "type": "motoko",
+            "main": "src/whitelist/main.mo"
         }
     },
     "defaults": {

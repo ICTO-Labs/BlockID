@@ -10,5 +10,8 @@
   },
   "validate": {
     "ic": "uspxb-mqaaa-aaaap-qhxqq-cai"
+  },
+  "whitelist": {
+    "ic": "kbyqe-kqaaa-aaaap-qpoba-cai"
   }
 }
