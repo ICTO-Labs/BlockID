@@ -10,15 +10,23 @@ import { storeToRefs } from 'pinia';
 import authService from '@/services/authService';
 import Connect from "@/actor/Connect";
 import { WALLETS } from '@/config';
+import { walletsList } from '@windoge98/plug-n-play';
+import { preloadIdls } from '@/actor/didList'
 const walletStore = useWalletStore();
 const { principalId, accountId, balance, isConnected, shortPrincipal, wallet } =
     storeToRefs(walletStore);
 import  {idlFactory as nnsIDL}  from '@/actor/did/nns.did';
 import { principalToAccountId } from '../../plugins/common';
-import { ISSUER_CANISTER_ID } from '@/config';
+import { ISSUER_CANISTER_ID, BACKEND_CANISTER_ID } from '@/config';
 const theme = useTheme();
 
 const router = useRouter();
+const walletList = walletsList.map(wallet => ({
+    id: wallet.id,
+    name: wallet.name === "Oisy Wallet" ? "OISY Wallet" : wallet.name,
+    icon: wallet.icon,
+    description: wallet.id === 'nfid' ? 'Sign in with Google' : undefined
+}));
 
 const projectStore = useProjectStore();
 // const theme = projectStore.theme;
@@ -44,13 +52,13 @@ const registerEarlyAdopter = async () => {
     console.log('_register', _register);
 }
 const checkConnect = async () => {
-
-    console.log('check Connect');
-    let neuronInfo = await Connect.canister('rrkah-fqaaa-aaaaa-aaaaq-cai', nnsIDL, false).get_full_neuron(BigInt('18158107153719370439'));
-    // let wallet = await Connect.canister('rrkah-fqaaa-aaaaa-aaaaq-cai', nnsIDL, false).get_neuron_ids();
-    console.log('get_neuron_ids', neuronInfo);
-    console.log('neuronInfo controller', (neuronInfo.Ok.controller[0].toText()));
-    console.log('neuronInfo accountId', principalToAccountId(neuronInfo.Ok.controller[0]));
+    const actor = await authService.getActor(
+        BACKEND_CANISTER_ID,
+        'backend'
+    );
+    console.log('actor', actor);
+    let _res = await actor.getApplication('block-id');
+    console.log('_res', _res);
 };
 const handleLogout = async () => {
     const confirm = await Dialog.confirm({
@@ -60,8 +68,7 @@ const handleLogout = async () => {
         icon: 'mdi-alert'
     });
     if (confirm) {
-        await authService.logout();
-        walletStore.clearWalletInfo(); //Logout and clear wallet info
+        await authService.disconnect();
         Dialog.close('confirm');
         Notify.success('Logout successfully!');
     } else {
@@ -139,7 +146,7 @@ const toggleDrawer = () => {
                 <template v-slot:activator="{ props }">
                     <v-btn dark variant="flat" v-bind="props" class="text-none">
                         <v-avatar size="24" class="mr-4">
-                            <v-img :src="WALLETS[wallet].logo" />
+                            <v-img :src="walletList.find(w => w.id === wallet).icon" />
                         </v-avatar>
                         {{ shortPrincipal }}
                     </v-btn>

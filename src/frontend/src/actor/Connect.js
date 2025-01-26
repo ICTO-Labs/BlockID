@@ -44,7 +44,6 @@ class CreateActor {
                                 });
                             }
                         }
-                        
                     }
                     try{
                         return await target._actor[name](...arguments);
@@ -68,9 +67,6 @@ class Connect {
     _provider = null;
 
     constructor(cid, idl, isAnonymous=false) {
-        const walletStore = useWalletStore();
-        const { wallet, walletInfo } = storeToRefs(walletStore);
-
         if(!cid) throw new Error("No Canister Id");
         if (!idl){
             if (Object.prototype.hasOwnProperty.call(this._mapIdls, cid)) {

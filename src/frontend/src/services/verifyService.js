@@ -1,7 +1,7 @@
 import { validate } from '@/../../declarations/validate/index.js';
 import { Principal } from '@dfinity/principal';
 import { requestVerifiablePresentation } from '@dfinity/verifiable-credentials/request-verifiable-presentation';
-import { DEVRIVATION_ORIGIN, INTERNET_INDENTITY, VC_VALIDATOR_CANISTER_ID } from '@/config';
+import { DERIVATION_ORIGIN, INTERNET_INDENTITY, VC_VALIDATOR_CANISTER_ID } from '@/config';
 import Connect from "@/actor/Connect";
 
 class VerifyService {
@@ -46,7 +46,7 @@ class VerifyService {
                 };
 
                 const identityProvider = new URL(INTERNET_INDENTITY);
-                const derivationOrigin = DEVRIVATION_ORIGIN;
+                const derivationOrigin = DERIVATION_ORIGIN;
                 const requestParams = {
                     onSuccess,
                     onError,

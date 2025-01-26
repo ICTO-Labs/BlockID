@@ -1,7 +1,8 @@
 import { createBaseActor } from "./BaseActor"
-import { HttpAgent } from "@dfinity/agent"
 import { IDL } from "@dfinity/candid"
 import { END_POINT, IS_DEV } from '@/config';
+import { Actor as _Actor, HttpAgent } from "@dfinity/agent";
+
 export let Connector;
 (function (Connector) {
     Connector["PLUG"] = "PLUG"
@@ -32,6 +33,17 @@ async function createInfinityActor(canisterId, interfaceFactory) {
 
 async function createPlugActor(canisterId, interfaceFactory) {
     return await window.ic.plug.createActor({ canisterId, interfaceFactory })
+}
+
+async function createStoicActor(canisterId, interfaceFactory, identity) {
+    console.log('STOIC - AUTH11111111111111111111', identity, 'createStoicActor');
+    return await _Actor.createActor(interfaceFactory, {
+        agent: await HttpAgent.create({
+            identity: identity ? identity : null,
+            providerUrl: "https://www.stoicwallet.com",
+        }),
+        canisterId,
+    });
 }
 
 export class Actor {
@@ -87,7 +99,14 @@ export class Actor {
             } catch (error) {
                 createActorError = String(error)
             }
+        } else if(this.connector === Connector.STOIC && !!identity){
+            try {
+                actor = await createStoicActor(canisterId, idlFactory, identity)
+            } catch (error) {
+                createActorError = String(error)
+            }
         } else {
+            console.log('createBaseActor:', _agent);
             actor = await createBaseActor({
                 canisterId: canisterId,
                 idlFactory: idlFactory,

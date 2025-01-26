@@ -4,9 +4,11 @@ import { getCurrentWalletScore, getTotalVerifiedWallets } from '@/services/backe
 import Notify from '@/plugins/notify';
 export const useWalletStore = defineStore('wallet', {
     state: () => ({
+        account: null,
         principalId: null,
         accountId: null,
         isConnected: false,
+        isInitialized: false,
         balance: null,
         score: 0,
         wallet: null,
@@ -25,6 +27,8 @@ export const useWalletStore = defineStore('wallet', {
     }),
     actions: {
         setWalletInfo(info) {
+            this.account = info.account;
+            this.isInitialized = info.isInitialized;
             this.walletInfo[info.wallet] = { identity: info.identity, principalId: info.principalId, accountId: info.accountId };
             this.currentWallet = info.wallet;
             this.connectedWallets[info.wallet] = true;
@@ -37,6 +41,8 @@ export const useWalletStore = defineStore('wallet', {
             this.saveToLocalStorage();
         },
         clearWalletInfo() {
+            this.account = null;
+            this.isInitialized = false;
             this.principalId = null;
             this.accountId = null;
             this.isConnected = false;
@@ -83,8 +89,10 @@ export const useWalletStore = defineStore('wallet', {
             try {
                 const dataToSave = {
                     principalId: this.principalId,
+                    account: this.account,
                     accountId: this.accountId,
                     isConnected: this.isConnected,
+                    isInitialized: this.isInitialized,
                     balance: this.balance,
                     score: this.score,
                     totalVerifiedWallets: this.totalVerifiedWallets,

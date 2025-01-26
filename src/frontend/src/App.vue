@@ -1,10 +1,10 @@
 <script setup>
 import { onBeforeMount } from 'vue';
 import { useWalletStore } from '@/store/walletStore';
-
-onBeforeMount(() => {
+import authService from '@/services/authService';
+onBeforeMount(async () => {
     const walletStore = useWalletStore();
-    walletStore.checkLoginStatus();
+    await authService.checkLoginStatus();
 });
 </script>
 
