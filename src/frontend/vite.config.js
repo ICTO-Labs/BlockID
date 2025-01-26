@@ -25,11 +25,14 @@ export default defineConfig({
                 changeOrigin: true
             }
         }
+    },define: {
+        'process.env': process.env
     },
     plugins: [
         vue(),
         environment('all', { prefix: 'CANISTER_' }),
         environment('all', { prefix: 'DFX_' }),
+        environment('all', { prefix: 'VITE_' }),
         Info()
     ],
     resolve: {
