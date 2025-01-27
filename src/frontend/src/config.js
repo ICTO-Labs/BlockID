@@ -6,7 +6,7 @@ export const BACKEND_CANISTER_ID = import.meta.env.VITE_BACKEND_CANISTER_ID
 export const FRONTEND_CANISTER_ID = import.meta.env.VITE_FRONTEND_CANISTER_ID
 export const VC_VALIDATOR_CANISTER_ID = import.meta.env.VITE_VALIDATE_CANISTER_ID
 export const ISSUER_CANISTER_ID = import.meta.env.VITE_INTERNET_IDENTITY_CANISTER_ID
-console.log('IS_DEV', IS_DEV, END_POINT)
+console.log('IS_DEV', IS_DEV, import.meta.env)
 
 export const FRONTEND_DOMAIN = import.meta.env.VITE_DERIVATION_ORIGIN;
 export const APPLICATION_ID = 'block-id';

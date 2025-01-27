@@ -18,9 +18,14 @@ const routes = [
                 component: () => import('@/views/Applications')
             },
             {
-                path: '/manage',
-                name: 'System Manage',
+                path: '/providers',
+                name: 'Providers',
                 component: () => import('@/views/Manage')
+            },
+            {
+                path: '/docs',
+                name: 'Docs',
+                component: () => import('@/views/Docs')
             },
             {
                 path: '/:pathMatch(.*)*',
