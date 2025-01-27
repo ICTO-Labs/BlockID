@@ -24,15 +24,7 @@ export default {
             this.template.paramTemplates.splice(index, 1);
         },
         async createTemplate() {
-            // Ở đây, bạn sẽ gọi API để tạo template mới
-            // Ví dụ:
-            // try {
-            //   await api.createTemplate(this.template)
-            //   this.$router.push('/templates')
-            // } catch (error) {
-            //   console.error('Lỗi khi tạo template:', error)
-            // }
-            console.log('Template được tạo:', this.template);
+            console.log('Template created:', this.template);
         }
     }
 };
@@ -54,12 +46,12 @@ export default {
                             ></v-text-field>
                             <v-text-field
                                 v-model="template.name"
-                                label="Tên"
+                                label="Name"
                                 required
                             ></v-text-field>
                             <v-textarea
                                 v-model="template.description"
-                                label="Mô tả"
+                                label="Description"
                                 required
                             ></v-textarea>
                             <v-card-title>Tham số</v-card-title>
@@ -75,20 +67,20 @@ export default {
                                 >
                                     <v-text-field
                                         v-model="param.key"
-                                        label="Tên tham số"
+                                        label="Param Name"
                                     ></v-text-field>
                                     <v-select
                                         v-model="param.type"
                                         :items="paramTypes"
-                                        label="Loại"
+                                        label="Type"
                                     ></v-select>
                                     <v-text-field
                                         v-model="param.label"
-                                        label="Nhãn"
+                                        label="Label"
                                     ></v-text-field>
                                     <v-text-field
                                         v-model="param.description"
-                                        label="Mô tả"
+                                        label="Description"
                                     ></v-text-field>
                                     <v-btn icon @click="removeParam(index)">
                                         <v-icon>mdi-delete</v-icon>
@@ -100,7 +92,7 @@ export default {
                     <v-card-actions>
                         <v-spacer></v-spacer>
                         <v-btn color="primary" @click="createTemplate"
-                            >Tạo Template</v-btn
+                            >Create Template</v-btn
                         >
                     </v-card-actions>
                 </v-card>

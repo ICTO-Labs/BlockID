@@ -19,6 +19,18 @@ const menus = ref([
         value: 2,
         prependIcon: 'mdi-apps',
         link: '/applications'
+    },
+    {
+        title: 'Docs',
+        value: 3,
+        prependIcon: 'mdi-file-document',
+        link: '/docs'
+    },
+    {
+        title: 'Providers',
+        value: 4,
+        prependIcon: 'mdi-cog',
+        link: '/providers'
     }
 ]);
 </script>
