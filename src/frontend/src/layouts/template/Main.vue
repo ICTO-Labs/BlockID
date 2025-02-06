@@ -18,7 +18,7 @@ const theme = useTheme();
 </script>
 <template>
     <v-app :theme="theme.global.name.value ? theme.global.name.value : 'light'">
-        <SystemBar />
+        <!-- <SystemBar /> -->
         <AppBar />
         <Sidebar />
         <v-main>

@@ -13,7 +13,8 @@ watch(isDrawerOpen, (newValue) => {
     rail.value = !newValue;
 });
 const menus = ref([
-    { title: 'Verify', value: 1, prependIcon: 'mdi-check-decagram', link: '/' },
+    { title: 'Home', value: 0, prependIcon: 'mdi-home', link: '/' },
+    { title: 'Verify', value: 1, prependIcon: 'mdi-check-decagram', link: '/app' },
     {
         title: 'Applications',
         value: 2,

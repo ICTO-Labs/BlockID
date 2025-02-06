@@ -8,9 +8,14 @@ const routes = [
         component: () => import('@/layouts/template/Main'),
         children: [
             {
-                path: '/:applicationId?',
+                path: '/',
                 name: 'Home',
                 component: () => import('@/views/Home')
+            },
+            {
+                path: '/app/:applicationId?',
+                name: 'Verify',
+                component: () => import('@/views/Verify')
             },
             {
                 path: '/applications',
