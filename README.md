@@ -139,3 +139,6 @@ MIT License
 - [Motoko Programming Language Guide](https://internetcomputer.org/docs/current/motoko/main/motoko)
 - [VC Flow Documentation](https://internetcomputer.org/docs/current/references/vc-spec/)
 - [BlockID Forum Post](https://forum.dfinity.org/t/blockid-one-id-infinite-trust/36740)
+- [Awesome Motoko](https://github.com/motoko-unofficial/awesome-motoko)
+- [Awesome Internet Computer](https://github.com/dfinity/awesome-internet-computer)
+- [mops - a package manager for Motoko](https://mops.one/)
