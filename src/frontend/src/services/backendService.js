@@ -97,6 +97,22 @@ export const getCurrentWalletScore = async (
     }
 };
 
+export const getWalletScore = async (walletId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getWalletScore(walletId, APPLICATION_ID);
+    } catch (error) {
+        console.error(error);
+        return 0;
+    }
+};
+export const getWalletDetail = async (walletId) => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getWalletDetail(walletId);
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
 export const createApplication = async (application) => {
     try {
         return await Connect.canister(BACKEND_CANISTER_ID, 'backend').createApplication(application);

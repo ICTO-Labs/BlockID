@@ -1,3 +1,32 @@
+<script setup>
+import WalletSearch from '@/components/WalletSearch';
+const projectFeatures = [
+    {
+        title: 'Easy Integration',
+        description: 'Simple API and SDK for quick implementation',
+        icon: 'mdi-puzzle',
+        color: 'primary'
+    },
+    {
+        title: 'Flexible Provider Framework',
+        description: 'Create custom providers or use built-in ones',
+        icon: 'mdi-view-grid-plus',
+        color: 'secondary'
+    },
+    {
+        title: 'Comprehensive Documentation',
+        description: 'Detailed guides and API references',
+        icon: 'mdi-book-open-page-variant',
+        color: 'info'
+    },
+    {
+        title: 'Security First',
+        description: 'Built on Internet Computer with VC Flow integration',
+        icon: 'mdi-shield-lock',
+        color: 'success'
+    }
+];
+</script>
 <template>
     <v-container class="introduction-container">
         <v-row justify="center" align="center">
@@ -10,6 +39,8 @@
                     <p class="text-h6 text-medium-emphasis mb-6">
                         Revolutionizing digital identity verification on Internet Computer through comprehensive trust scoring and verifiable credentials
                     </p>
+                    <WalletSearch label="Search Wallet by Principal ID" placeholder="Enter Principal ID" />
+
                     <v-row justify="center" class="mb-8">
                         <v-col cols="auto">
                             <v-btn
@@ -105,34 +136,6 @@
     </v-container>
 </template>
 
-<script setup>
-const projectFeatures = [
-    {
-        title: 'Easy Integration',
-        description: 'Simple API and SDK for quick implementation',
-        icon: 'mdi-puzzle',
-        color: 'primary'
-    },
-    {
-        title: 'Flexible Provider Framework',
-        description: 'Create custom providers or use built-in ones',
-        icon: 'mdi-view-grid-plus',
-        color: 'secondary'
-    },
-    {
-        title: 'Comprehensive Documentation',
-        description: 'Detailed guides and API references',
-        icon: 'mdi-book-open-page-variant',
-        color: 'info'
-    },
-    {
-        title: 'Security First',
-        description: 'Built on Internet Computer with VC Flow integration',
-        icon: 'mdi-shield-lock',
-        color: 'success'
-    }
-];
-</script>
 
 <style scoped>
 .introduction-container {

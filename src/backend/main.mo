@@ -1238,4 +1238,13 @@ actor BlockID {
     public query func getScoreDistribution() : async [(Nat, Nat)] {
         Iter.toArray(scoreDistribution.entries())
     };
+    //Get wallet detail
+    public query func getWalletDetail(walletId: Types.WalletId) : async Result.Result<Types.Wallet, Text> {
+        switch (wallets.get(walletId)) {
+            case null { #err("Wallet not found") };
+            case (?wallet) { 
+                #ok(wallet)
+            };
+        };
+    };
 }

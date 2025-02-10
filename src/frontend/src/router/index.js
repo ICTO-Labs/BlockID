@@ -33,6 +33,11 @@ const routes = [
                 component: () => import('@/views/Docs')
             },
             {
+                path: '/wallet/:walletId?',
+                name: 'Wallet',
+                component: () => import('@/views/Wallet')
+            },
+            {
                 path: '/:pathMatch(.*)*',
                 name: 'Error404',
                 component: () => import('@/views/Error404')
