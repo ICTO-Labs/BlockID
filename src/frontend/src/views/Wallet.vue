@@ -294,10 +294,10 @@ function truncatePrincipal(principal) {
         </v-row>
 
         <!-- No Data Message -->
-        <v-row v-else-if="searched && !isLoading" justify="center">
-            <v-col cols="12" md="10" class="text-center">
+        <v-row v-else-if="(!wallet || wallet.applicationScores.length === 0) && !isLoading" justify="center">
+            <v-col cols="12" md="10" class="text-left">
                 <v-alert type="warning">
-                    No verification data found for this wallet
+                    No verification data found for this wallet!
                 </v-alert>
             </v-col>
         </v-row>
