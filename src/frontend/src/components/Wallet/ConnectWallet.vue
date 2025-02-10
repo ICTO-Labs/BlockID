@@ -13,6 +13,7 @@ const handleConnect = async (walletId) => {
     try {
         const _walletInfo = await authService.connect(walletId);
         if(_walletInfo && _walletInfo.success){
+            console.log(_walletInfo, 'walletInfo');
             dialogStore.closeDialog('connectWallet');
             walletStore.setWalletInfo(_walletInfo);
         }else{

@@ -13,20 +13,26 @@ export const APPLICATION_ID = 'block-id';
 export const WALLETS = {
     'INTERNET_IDENTITY': {
         name: 'Internet Identity',
-        logo: 'https://app.icpswap.com/images/connect/InternetIdentity.svg',
+        logo: '/images/partners/ii.svg',
         id: 'INTERNET_IDENTITY',
         default: true
     },
     'PLUG': {
         name: 'Plug Wallet',
-        logo: 'https://app.icpswap.com/images/connect/Plug.svg',
+        logo: '/images/partners/plug.svg',
         id: 'PLUG',
         default: false
     },
     'STOIC': {
         name: 'Stoic Wallet',
-        logo: 'https://entrepot.app/stoic.png',
+        logo: '/images/partners/stoic.svg',
         id: 'STOIC',
+        default: false
+    },
+    'METAMASK': {
+        name: 'MetaMask',
+        logo: '/images/partners/metamask.svg',
+        id: 'METAMASK',
         default: false
     }
 };

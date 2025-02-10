@@ -28,6 +28,7 @@
         "@dfinity/nns": "^6.0.0",
         "@dfinity/principal": "^2.0.0",
         "@dfinity/verifiable-credentials": "^0.0.2",
+        "@fort-major/msq-client": "^0.3.22",
         "@nfid/embed": "^0.10.3",
         "@slide-computer/signer": "^3.6.4",
         "@slide-computer/signer-agent": "^3.6.4",

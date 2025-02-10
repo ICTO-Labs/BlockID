@@ -1,6 +1,7 @@
 import { AuthClient } from '@dfinity/auth-client';
 import { StoicIdentity } from "ic-stoic-identity";
 import { principalToAccountId } from '@/plugins/common';
+import { MsqClient, MsqIdentity } from "@fort-major/msq-client";
 
 import { END_POINT, INTERNET_INDENTITY, DERIVATION_ORIGIN, BACKEND_CANISTER_ID, FRONTEND_CANISTER_ID, VC_VALIDATOR_CANISTER_ID } from '@/config';
 const defaultOptions = {
@@ -27,6 +28,8 @@ class AuthService {
                 return await this.plugWallet();
             case 'STOIC':
                 return await this.stoicWallet();
+            case 'METAMASK':
+                return await this.metaMaskWallet();
             default:
                 throw new Error('Invalid credentials');
         }
@@ -131,6 +134,39 @@ class AuthService {
                             }
                         })
                     })();
+                    break;
+                case 'METAMASK':
+                    return (async () => {
+                        console.log('check metamask');
+                        const result = await MsqClient.create();
+                        if (!("Ok" in result)) return false;
+                        const client = result.Ok;
+                        const { msq, identity } = result.Ok;
+                        console.log(client, 'client', msq, identity);
+                        if(client?.isAuthorized()){
+                            const identity = await client.requestLogin();
+                            if(identity === null) return {
+                                success: false,
+                                message: 'User rejected login',
+                                wallet: 'METAMASK'
+                            }
+                            return {
+                                success: true,
+                                message: 'Connected to MetaMask',
+                                identity: null,
+                                principalId: identity.getPrincipal().toText(),
+                                accountId: principalToAccountId(identity.getPrincipal().toText(), 0),
+                                wallet: 'METAMASK'
+                            }
+                        } else {
+                            return {
+                                success: false,
+                                message: 'MetaMask not connected',
+                                wallet: 'METAMASK'
+                            };
+                        }
+                    })();
+                    break;
                 default:
                     break;
             }
@@ -247,6 +283,37 @@ class AuthService {
                 };
             }
         })
+    }
+
+    async metaMaskWallet(){
+        const result = await MsqClient.create();
+        if (!("Ok" in result)) {
+            return {
+                success: false,
+                message: 'MetaMask not connected',
+                wallet: 'METAMASK'
+            }
+        }
+
+        const client = result.Ok;
+        const identity = await client.requestLogin();
+        if (identity === null) {
+            return {
+                success: false,
+                message: 'User rejected login',
+                wallet: 'METAMASK'
+            }
+        }
+
+        let principal = identity.getPrincipal().toText();
+        return {
+            success: true,
+            message: 'Connected to MetaMask',
+            identity: null,
+            principalId: principal,
+            accountId: principalToAccountId(principal, 0),
+            wallet: 'METAMASK'
+        }
     }
 }
 
