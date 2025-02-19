@@ -1,4 +1,4 @@
-export const idlFactory = ({ IDL }: { IDL: any }) => {
+export const idlFactory = ({ IDL }) => {
     const WalletId = IDL.Principal;
     const Result_1 = IDL.Variant({ 'ok': IDL.Null, 'err': IDL.Text });
     const ApplicationId = IDL.Text;
@@ -240,4 +240,4 @@ export const idlFactory = ({ IDL }: { IDL: any }) => {
         'verifyWalletByValidator': IDL.Func([IDL.Text, ValidatorId], [Result], []),
     });
 };
-export const init = ({ IDL }: { IDL: any }) => { return []; };
+export const init = ({ IDL }) => { return []; };
