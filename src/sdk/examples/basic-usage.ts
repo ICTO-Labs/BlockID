@@ -10,12 +10,8 @@ async function example() {
 
     try {
         // Get wallet details
-        const wallet = await blockID.getWalletDetail('principal-id');
-        console.log('Wallet details:', wallet);
-
-        // Check requirements
-        const meets = await blockID.meetsRequirements('principal-id', 50);
-        console.log('Meets requirements:', meets);
+        const result = await blockID.verifyScore({required: 10, principal: 'principal-id'});
+        console.log('Verification result:', result);
 
         // Get validators
         const validators = await blockID.getValidators();

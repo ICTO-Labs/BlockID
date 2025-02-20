@@ -2,6 +2,7 @@
 
 Official SDK for integrating BlockID verification system into your applications.
 
+We support all IC wallets, including Internet Identity using VC Flow.
 ## Installation
 
 ```bash
@@ -15,41 +16,44 @@ import { BlockID } from '@blockid/sdk';
 
 // Initialize SDK
 const blockID = new BlockID({
-  host: 'https://icp0.io',        // Optional, defaults to https://icp0.io
-  appId: 'your-app-id'           // Optional, defaults to 'block-id'
+  host: 'https://icp0.io',// Optional, defaults to https://icp0.io
+  appId: 'your-app-id'// Optional, defaults to 'block-id'
 });
 
-// Get wallet verification details
-const walletDetail = await blockID.getWalletDetail('principal-id');
+// Verify with BlockID, ensure your wallet is connected to your dApp
+const result = await blockID.verifyScore({required: 10, principal: 'principal-id'});
+console.log('Verification result:', result);
 
-// Get wallet score
-const score = await blockID.getWalletScore('principal-id');
-
-// Check if wallet meets requirements
-const meetsRequirement = await blockID.meetsRequirements('principal-id', 50);
-
-// Check score for specific validator
-const meetsValidatorRequirement = await blockID.meetsRequirements('principal-id', 20, 'validator-id');
+// Verify score with Internet Identity using VC Flow
+const result = await blockID.verifyScore({required: 10, principal: 'principal-id', vcFlow: true});
+console.log('Verification result:', result);
 ```
+
+Create your app on [BlockID Dashboard](https://blockid.cc/applications) and get your appId. Or use default appId and verify with BlockID.
 
 ## API Reference
 
-### Configuration
+### Configuration and Result
 
 ```typescript
 interface BlockIDConfig {
   host?: string;         // IC network host
   appId?: string;        // Application ID (defaults to 'block-id')
 }
+
+interface VerifyScoreResult {
+    success: boolean; // true if wallet meets score requirements
+    message?: string; // error message
+    details?: any; // verification details
+    score?: number; // wallet score, not show if vcFlow is true
+    principal?: string; // wallet principal
+}
 ```
 
 ### Methods
 
-#### `getWalletDetail(principal: string)`
-Get detailed verification information for a wallet
-
-#### `getWalletScore(principal: string)`
-Get wallet's score information
+#### `verifyScore(obj: {required: number, principal: string, vcFlow?: boolean})`
+Verify if wallet meets score requirements
 
 #### `getValidators(applicationId?: string)`
 Get list of validators for an application

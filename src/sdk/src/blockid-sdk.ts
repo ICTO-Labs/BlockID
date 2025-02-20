@@ -60,6 +60,8 @@ export interface VerifyScoreResult {
     success: boolean;
     message?: string;
     details?: any;
+    score?: number;
+    principal?: string;
 }
 
 export class BlockID {
@@ -92,47 +94,47 @@ export class BlockID {
 
     /**
      * Verify if wallet meets minimum score requirement
-     * @param score Required minimum score
-     * @param principal User's principal
-     * @param options Optional parameters for II verification
+     * @param obj Required minimum score, user's principal, and verification type
      * @returns VerifyScoreResult
      */
     async verifyScore(
-        score: number,
-        principal: string,
-        options?: {
-            walletType?: 'blockid' | 'ii';
-            identity?: Identity;
+        obj: {
+            required: number,
+            principal: string,
+            vcFlow?: boolean;
         }
     ): Promise<VerifyScoreResult> {
-        const walletType = options?.walletType || 'blockid';
-
-        // Validate II requirements
-        if (walletType === 'ii' && !options?.identity) {
+        const { required, principal, vcFlow = false } = obj;
+        const walletType = vcFlow ? 'ii' : 'blockid';
+        //Check valid principal
+        if (!Principal.fromText(principal)) {
             return {
                 success: false,
-                message: 'Identity is required for Internet Identity verification'
+                message: 'Invalid principal',
+                score: 0,
+                principal: principal
             };
         }
-
+        
         try {
             if (walletType === 'ii') {
-                return this.verifyScoreWithII(score, principal, options?.identity!);
+                return this.verifyScoreWithII(required, principal);
             } else {
-                return this.verifyScoreWithBlockID(score, principal);
+                return this.verifyScoreWithBlockID(required, principal);
             }
         } catch (error: any) {
             return {
                 success: false,
-                message: error.message
+                message: error.message,
+                score: 0,
+                principal: principal
             };
         }
     }
 
     private async verifyScoreWithII(
         score: number,
-        principal: string,
-        identity: Identity
+        principal: string
     ): Promise<VerifyScoreResult> {
         try {
             const response = await new Promise<VerifiablePresentationResponse>((resolve, reject) => {
@@ -148,7 +150,7 @@ export class BlockID {
                             credentialType: "VerifiedScore",
                             arguments: { score }
                         },
-                        credentialSubject: identity.getPrincipal(),
+                        credentialSubject: Principal.fromText(principal),
                     },
                     identityProvider: new URL(this.II_URL),
                     derivationOrigin: undefined,
@@ -161,26 +163,30 @@ export class BlockID {
                     decodeJwt(cred)
                 );
 
-                const verifiedScore = credential?.vc?.credentialSubject?.score || 0;
-                const success = verifiedScore >= score;
-
+                const success = true;
                 return {
                     success,
                     message: success 
-                        ? `Score verification successful: ${verifiedScore} >= ${score}`
-                        : `Score verification failed: ${verifiedScore} < ${score}`,
-                    details: { presentation: decoded, alias, credential }
+                        ? `Score verification successful`
+                        : `Score verification failed`,
+                    details: { presentation: decoded, alias, credential },
+                    score: 0,
+                    principal: principal
                 };
             }
 
             return {
                 success: false,
-                message: 'Failed to obtain verifiable presentation'
+                message: 'Failed to obtain verifiable presentation',
+                score: 0,
+                principal: principal
             };
         } catch (error: any) {
             return {
                 success: false,
-                message: `II verification failed: ${error.message}`
+                message: `VC Flow verification failed: ${error.message}`,
+                score: 0,
+                principal: principal
             };
         }
     }
@@ -196,14 +202,18 @@ export class BlockID {
             return {
                 success,
                 message: success 
-                    ? `Score verification successful: ${walletScore.totalScore} >= ${score}`
-                    : `Score verification failed: ${walletScore.totalScore} < ${score}`,
-                details: walletScore
+                    ? `Score verification successful, your score is ${walletScore.totalScore}, required score is ${score}`
+                    : `Score verification failed, your score is ${walletScore.totalScore}, required score is ${score}`,
+                details: walletScore,
+                score: walletScore.totalScore,
+                principal: principal
             };
         } catch (error: any) {
             return {
                 success: false,
-                message: `BlockID verification failed: ${error.message}`
+                message: `BlockID verification failed: ${error.message}`,
+                score: 0,
+                principal: principal
             };
         }
     }
