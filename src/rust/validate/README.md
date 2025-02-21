@@ -1,6 +1,9 @@
 # Validate Canister
 
-This is the standalone validate rust canister for the verifier project. It is responsible for validating the credentials and presentations.
+This is the standalone validate rust canister for the verifier project. It is responsible for validating the credentials and presentations. 
+
+See the validate documentation for more details: [Become a relying party
+](https://internetcomputer.org/docs/current/developer-docs/identity/verifiable-credentials/relying-party)
 
 Create a new validate canister:
 
@@ -12,10 +15,10 @@ Add the following to your `dfx.json` file:
 
 ```json
 "validate": {
-            "type": "rust",
-            "package": "validate",
-            "candid": "src/rust/validate/validate.did"
-        },
+    "type": "rust",
+    "package": "validate",
+    "candid": "src/rust/validate/validate.did"
+},
 ```
 
 Generate the candid interface:
@@ -42,16 +45,4 @@ The validate canister needs to be initialized with the following arguments, init
 
 ```bash
 ./scripts/set-validate-config.sh
-```
-
-## Issuer
-
-
-Then you can call to add issuers (support multiple issuers):
-
-```bash
-DFX_NETWORK="local"
-ISSUER_CANISTER_ID="rdmx6-jaaaa-aaaaa-aaadq-cai"
-
-dfx canister call validate add_issuer '(record { issuer = principal "'"$ISSUER_CANISTER_ID"'"; credential_spec = vec {} })' --network "$DFX_NETWORK"
 ```
