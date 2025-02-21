@@ -1,7 +1,7 @@
 export const IS_DEV = import.meta.env.DEV;
 export const DERIVATION_ORIGIN = IS_DEV ? 'http://localhost:3000' : 'https://y3yam-6aaaa-aaaap-qb7aq-cai.icp0.io';
 export const END_POINT = IS_DEV ? 'http://localhost:4943' : 'https://icp0.io';
-export const INTERNET_INDENTITY = IS_DEV ? 'http://be2us-64aaa-aaaaa-qaabq-cai.localhost:4943' : 'https://identity.ic0.app';
+export const INTERNET_INDENTITY = IS_DEV ? 'https://identity.ic0.app' : 'https://identity.ic0.app';
 export const BACKEND_CANISTER_ID = import.meta.env.VITE_BACKEND_CANISTER_ID
 export const FRONTEND_CANISTER_ID = import.meta.env.VITE_FRONTEND_CANISTER_ID
 export const VC_VALIDATOR_CANISTER_ID = import.meta.env.VITE_VALIDATE_CANISTER_ID

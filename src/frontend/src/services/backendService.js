@@ -296,3 +296,22 @@ export const getTotalVerifiedWallets = async () => {
         return {err: error};
     }
 };
+
+export const getOverallStats = async () => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getOverallStats();
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+
+export const getValidatorStats = async () => {
+    try {
+        return await Connect.canister(BACKEND_CANISTER_ID, 'backend', true).getValidatorStats();
+    } catch (error) {
+        console.error(error);
+        return {err: error};
+    }
+};
+

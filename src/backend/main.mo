@@ -13,6 +13,7 @@ import Blob "mo:base/Blob";
 import Char "mo:base/Char";
 import Int "mo:base/Int";
 import Hash "mo:base/Hash";
+import Buffer "mo:base/Buffer";
 import Float "mo:base/Float";
 import Types "Types";
 import Provider "Provider";
@@ -57,6 +58,14 @@ actor BlockID {
     private var scoreDistribution = HashMap.HashMap<Nat, Nat>(0, Nat.equal, Hash.hash);
     private stable var _scoreDistribution : [(Nat, Nat)] = [];
 
+    //Analytics
+    private var dailyStats = HashMap.HashMap<Int, Types.DailyStats>(0, Int.equal, Int.hash);
+    private var validatorStats = HashMap.HashMap<Text, Types.ValidatorStats>(0, Text.equal, Text.hash);
+    private var verificationTrends = Buffer.Buffer<Types.VerificationTrend>(0);
+    private stable var _dailyStats: [(Int, Types.DailyStats)] = [];
+    private stable var _validatorStats: [(Text, Types.ValidatorStats)] = [];
+    private stable var _verificationTrends: [Types.VerificationTrend] = [];
+
     //********************** System function **********************//
     system func preupgrade() {
         _validators := Iter.toArray(validators.entries());
@@ -67,6 +76,9 @@ actor BlockID {
         _pendingLinks := Iter.toArray(pendingLinks.entries());
         _verificationParamsMap := Iter.toArray(verificationParamsMap.entries());
         _scoreDistribution := Iter.toArray(scoreDistribution.entries());
+        _dailyStats := Iter.toArray(dailyStats.entries());
+        _validatorStats := Iter.toArray(validatorStats.entries());
+        _verificationTrends := Iter.toArray(verificationTrends.vals());
     };
     system func postupgrade() {
         validators := HashMap.fromIter<Text, Types.Validator>(_validators.vals(), 0, Text.equal, Text.hash);
@@ -77,6 +89,9 @@ actor BlockID {
         pendingLinks := HashMap.fromIter<Types.WalletId, [Types.WalletId]>(_pendingLinks.vals(), 0, Principal.equal, Principal.hash);
         verificationParamsMap := HashMap.fromIter<Text, Types.VerificationParams>(_verificationParamsMap.vals(), 0, Text.equal, Text.hash);
         scoreDistribution := HashMap.fromIter(_scoreDistribution.vals(), 0, Nat.equal, Hash.hash);
+        dailyStats := HashMap.fromIter<Int, Types.DailyStats>(_dailyStats.vals(), 0, Int.equal, Int.hash);
+        validatorStats := HashMap.fromIter<Text, Types.ValidatorStats>(_validatorStats.vals(), 0, Text.equal, Text.hash);
+        verificationTrends := Buffer.fromArray(_verificationTrends);
     };
     //********************** System function **********************//
     private func _isAdmin(p : Text) : (Bool) {
@@ -207,6 +222,13 @@ actor BlockID {
         Iter.toArray(providers.entries())
     };
 
+    // Helper function to get validator name from validatorId
+    private func getValidatorName(validatorId: Text) : ?Text {
+        switch (validators.get(validatorId)) {
+            case null { null };
+            case (?validator) { ?validator.name };
+        };
+    };
     //Count total score from all criterias by Validator
     private func _updateTotalValidatorScore(validatorId: Types.ValidatorId) : () {
         switch (validators.get(validatorId)) {
@@ -371,7 +393,11 @@ actor BlockID {
                         
                         // Update wallet score
                         updateWalletScore(walletId, application_id, validator_id, [criteriaScore]);
-                        
+                        // Update stats for analytics
+                        updateDailyStats(now);
+                        updateValidatorStats(validator_id, true, vcCriteria.score, now);
+                        addVerificationTrend(validator_id, true, vcCriteria.score, now);
+
                         return #ok(true);
                     };
                 };
@@ -595,8 +621,18 @@ actor BlockID {
                                 };
                                 criteriaScores := Array.append(criteriaScores, [criteriaScoreWithoutMessage]);
                                 await* updateVerificationStats(walletId, applicationId, criteriaScore.score);
+
+                                //Update stats for analytics
+                                updateDailyStats(Time.now());
+                                updateValidatorStats(validatorId, true, criteriaScore.score, Time.now());
+                                addVerificationTrend(validatorId, true, criteriaScore.score, Time.now());
+
                             }else{
                                 message := criteriaScore.message;
+                                 //Update stats for analytics
+                                updateValidatorStats(validatorId, false, 0, Time.now());
+                                addVerificationTrend(validatorId, false, 0, Time.now());
+
                             };
                         };
                     };
@@ -1247,4 +1283,240 @@ actor BlockID {
             };
         };
     };
+
+    /////////////////////// Analytics //////////////////////////////////////////////////////////
+
+    // Helper function to get the timestamp of the start of the day
+    private func getDayTimestamp(timestamp: Int) : Int {
+        timestamp - (timestamp % (24 * 60 * 60 * 1_000_000_000))
+    };
+
+    // Update daily stats
+    private func updateDailyStats(timestamp: Int) : () {
+        let dayTs = getDayTimestamp(timestamp);
+        let stats = switch (dailyStats.get(dayTs)) {
+            case null {
+                {
+                    date = dayTs;
+                    newVerifications = 0;
+                    activeWallets = 0;
+                    totalVerifications = 0;
+                    avgScore = 0.0;
+                }
+            };
+            case (?s) { s };
+        };
+        
+        // Update stats
+        let updatedStats = {
+            date = stats.date;
+            newVerifications = stats.newVerifications + 1;
+            activeWallets = stats.activeWallets;
+            totalVerifications = stats.totalVerifications + 1;
+            avgScore = stats.avgScore;
+        };
+        
+        dailyStats.put(dayTs, updatedStats);
+    };
+
+    // Update validator stats
+    private func updateValidatorStats(validatorId: Text, success: Bool, score: Nat, updateTime: Int) : () {
+        let stats = switch (validatorStats.get(validatorId)) {
+            case null {
+                {
+                    validatorId = validatorId;
+                    totalVerifications = 0;
+                    successRate = 0.0;
+                    avgScore = 0.0;
+                    lastUpdated = updateTime;
+                }
+            };
+            case (?s) { s };
+        };
+        
+        let newTotal = stats.totalVerifications + 1;
+        let newSuccessRate = if (success) {
+            (stats.successRate * Float.fromInt(stats.totalVerifications) + 1.0) / Float.fromInt(newTotal)
+        } else {
+            (stats.successRate * Float.fromInt(stats.totalVerifications)) / Float.fromInt(newTotal)
+        };
+        
+        let newAvgScore = (stats.avgScore * Float.fromInt(stats.totalVerifications) + Float.fromInt(score)) / Float.fromInt(newTotal);
+        
+        let updatedStats = {
+            validatorId = stats.validatorId;
+            validatorName = getValidatorName(validatorId);
+            totalVerifications = newTotal;
+            successRate = newSuccessRate;
+            avgScore = newAvgScore;
+            lastUpdated = updateTime;
+        };
+        
+        validatorStats.put(validatorId, updatedStats);
+    };
+
+    // API endpoints for frontend
+
+    // Get overall stats
+    public query func getOverallStats() : async {
+        totalUsers: Nat;
+        totalVerifications: Nat; 
+        avgScore: Float;
+        successRate: Float;
+    } {
+        var totalVerifications = 0;
+        var totalScore : Float = 0;
+        var totalSuccessRate : Float = 0;
+        var validatorCount : Nat = 0;
+
+        for ((_, stats) in validatorStats.entries()) {
+            totalVerifications += stats.totalVerifications;
+            // Add avgScore * totalVerifications to get the total score
+            totalScore += stats.avgScore * Float.fromInt(stats.totalVerifications);
+            totalSuccessRate += stats.successRate * Float.fromInt(stats.totalVerifications);
+            validatorCount += 1;
+
+        };
+        
+        let avgScore = if (totalVerifications > 0) {
+            totalScore / Float.fromInt(totalVerifications)
+        } else {
+            0.0
+        };
+
+        // Calculate weighted average successRate
+        let successRate = if (totalVerifications > 0) {
+            totalSuccessRate / Float.fromInt(totalVerifications)
+        } else {
+            0.0
+        };
+        
+        {
+            totalUsers = TOTAL_VERIFIED_WALLETS;
+            totalVerifications = totalVerifications;
+            avgScore = avgScore;
+            successRate = successRate;
+        }
+    };
+
+    // Get daily stats
+    public query func getDailyStats(days: Nat) : async [Types.DailyStats] {
+        let now = Time.now();
+        let stats = Buffer.Buffer<Types.DailyStats>(days);
+        
+        var i = 0;
+        while (i < days) {
+            let dayTs = getDayTimestamp(now - Int.abs(i) * 24 * 60 * 60 * 1_000_000_000);
+            switch (dailyStats.get(dayTs)) {
+                case null {
+                    stats.add({
+                        date = dayTs;
+                        newVerifications = 0;
+                        activeWallets = 0;
+                        totalVerifications = 0;
+                        avgScore = 0.0;
+                    });
+                };
+                case (?s) { stats.add(s) };
+            };
+            i += 1;
+        };
+        
+        Buffer.toArray(stats)
+    };
+
+    // Get validator stats
+    public query func getValidatorStats() : async [(Text, Types.ValidatorStats)] {
+        Iter.toArray(validatorStats.entries())
+    };
+
+    // Get verification trends
+    public query func getVerificationTrends(limit: Nat) : async [Types.VerificationTrend] {
+        let size = verificationTrends.size();
+        if (size == 0) {
+            return [];
+        };
+        let start = if (size > limit) { Nat.sub(size, limit) } else { 0 };
+        let actualLimit = Nat.min(limit, size - start);
+        Buffer.toArray(Buffer.subBuffer(verificationTrends, start, actualLimit))
+    };
+
+    // Add function to update verification trends
+    private func addVerificationTrend(validatorId: Text, success: Bool, score: Nat, updateTime: Int) : () {
+        verificationTrends.add({
+            timestamp = updateTime;
+            validatorId = validatorId;
+            success = success;
+            score = score;
+        });
+    };
+
+    //Re-analytics
+    public shared(msg) func reAnalytics(applicationId: Text) : async Text {
+        if (not _isAdmin(Principal.toText(msg.caller))) {
+            return "Only admin can perform this action";
+        };
+
+        // Reset all stats
+        dailyStats := HashMap.HashMap<Int, Types.DailyStats>(0, Int.equal, Int.hash);
+        validatorStats := HashMap.HashMap<Text, Types.ValidatorStats>(0, Text.equal, Text.hash);
+        verificationTrends := Buffer.Buffer<Types.VerificationTrend>(0);
+        scoreDistribution := HashMap.HashMap<Nat, Nat>(0, Nat.equal, Hash.hash);
+        
+        var totalVerifiedWallets = 0;
+        var processedWallets = 0;
+        var totalVerifications = 0;
+
+        // Iterate through all wallets
+        for (wallet in wallets.vals()) {
+            var isVerified = false;
+            
+            for (appScore in wallet.applicationScores.vals()) {
+                if (appScore.applicationId == applicationId) {
+                    for (validatorScore in appScore.validatorScores.vals()) {
+                        // Loop through each criteriaScore and update stats based on the verification time of each criteria
+                        for (criteriaScore in validatorScore.criteriaScores.vals()) {
+                            if (criteriaScore.verified) {
+                                switch (criteriaScore.verificationTime) {
+                                    case (?verificationTime) {
+                                        // Update stats with the score and time of each criteria
+                                        updateDailyStats(verificationTime);
+                                        updateValidatorStats(validatorScore.validatorId, true, criteriaScore.score, verificationTime);
+                                        addVerificationTrend(validatorScore.validatorId, true, criteriaScore.score, verificationTime);
+                                        
+                                        isVerified := true;
+                                        totalVerifications += 1;
+                                    };
+                                    case null {
+                                        Debug.print("Warning: Found verified criteria without verification time");
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+
+            if (isVerified) {
+                totalVerifiedWallets += 1;
+            };
+            processedWallets += 1;
+        };
+
+        // Update total verified wallets
+        TOTAL_VERIFIED_WALLETS := totalVerifiedWallets;
+
+        // Create report
+        let report = "Re-analytics completed:\n" #
+            "- Total processed wallets: " # Nat.toText(processedWallets) # "\n" #
+            "- Total verified wallets: " # Nat.toText(totalVerifiedWallets) # "\n" #
+            "- Total verifications: " # Nat.toText(totalVerifications) # "\n" #
+            "- Score distribution entries: " # Nat.toText(Iter.size(scoreDistribution.entries())) # "\n" #
+            "- Daily stats entries: " # Nat.toText(Iter.size(dailyStats.entries())) # "\n" #
+            "- Validator stats entries: " # Nat.toText(Iter.size(validatorStats.entries())) # "\n" #
+            "- Verification trends: " # Nat.toText(verificationTrends.size());
+
+        return report;
+    };
+
 }

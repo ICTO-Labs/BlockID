@@ -188,4 +188,30 @@ module {
         value: Int;
         maxValue: ?Int;
     };
+
+    //Analytics
+    public type DailyStats = {
+        date: Int; // Unix timestamp 
+        newVerifications: Nat;
+        activeWallets: Nat;
+        totalVerifications: Nat;
+        avgScore: Float;
+    };
+
+    public type ValidatorStats = {
+        validatorId: Text;
+        validatorName: ?Text;
+        totalVerifications: Nat;
+        successRate: Float;
+        avgScore: Float;
+        lastUpdated: Int;
+    };
+
+    public type VerificationTrend = {
+        timestamp: Int;
+        validatorId: Text;
+        success: Bool;
+        score: Nat;
+    };
+
 }

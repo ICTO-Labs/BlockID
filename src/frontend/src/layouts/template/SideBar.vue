@@ -15,21 +15,22 @@ watch(isDrawerOpen, (newValue) => {
 const menus = ref([
     { title: 'Home', value: 0, prependIcon: 'mdi-home', link: '/' },
     { title: 'Verify', value: 1, prependIcon: 'mdi-check-decagram', link: '/app' },
+    { title: 'Analytics', value: 2, prependIcon: 'mdi-chart-box', link: '/analytics' },
     {
         title: 'Applications',
-        value: 2,
+        value: 3,
         prependIcon: 'mdi-apps',
         link: '/applications'
     },
     {
         title: 'Docs',
-        value: 3,
+        value: 4,
         prependIcon: 'mdi-file-document',
         link: '/docs'
     },
     {
         title: 'Providers',
-        value: 4,
+        value: 5,
         prependIcon: 'mdi-cog',
         link: '/providers'
     }
