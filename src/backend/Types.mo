@@ -53,6 +53,7 @@ module {
             #Remote: Text; //Remote canister id
             #VC; //Define if is verify with a VC
             #Custom; //Custom module...
+            #Marketplace: Text; // providerId from marketplace
         };
         params: [ProviderParams];//Key - Value
         owner: ?Principal;//for custom providers

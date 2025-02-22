@@ -17,7 +17,7 @@ const form = ref({
     owner: []
 });
 
-const moduleTypes = ['Local', 'Remote', 'VC', 'Custom'];
+const moduleTypes = ['Local', 'Remote', 'VC', 'Custom', 'Marketplace'];
 const selectedModuleType = computed({
     get: () => Object.keys(form.value.moduleType)[0],
     set: (val) => {
@@ -100,6 +100,11 @@ onMounted(() => {
                     v-if="selectedModuleType === 'Local' || selectedModuleType === 'Remote'"
                     v-model="moduleTypeValue"
                     :label="selectedModuleType === 'Local' ? 'Local Module Name' : 'Remote Canister ID'"
+                ></v-text-field>
+                <v-text-field
+                    v-if="selectedModuleType === 'Marketplace'"
+                    v-model="moduleTypeValue"
+                    label="Marketplace Provider ID"
                 ></v-text-field>
                 <v-card class="mt-4">
                     <v-card-title>

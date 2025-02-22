@@ -33,6 +33,33 @@ const routes = [
                 component: () => import('@/views/Manage')
             },
             {
+                path: '/marketplace',
+                name: 'Marketplace',
+                component: () => import('@/views/marketplace/Index'),
+                children: [
+                    {
+                        path: '',
+                        name: 'List Providers',
+                        component: () => import('@/views/marketplace/List')
+                    },
+                    {
+                        path: 'provider/:providerId',
+                        name: 'Provider',
+                        component: () => import('@/views/marketplace/Provider')
+                    },
+                    {
+                        path: 'submit',
+                        name: 'Submit',
+                        component: () => import('@/views/marketplace/Submit')
+                    },
+                    {
+                        path: 'manage',
+                        name: 'Manage',
+                        component: () => import('@/views/marketplace/Manage')
+                    }
+                ]
+            },
+            {
                 path: '/docs',
                 name: 'Docs',
                 component: () => import('@/views/Docs')

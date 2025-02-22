@@ -33,6 +33,12 @@ const menus = ref([
         value: 5,
         prependIcon: 'mdi-cog',
         link: '/providers'
+    },
+    {
+        title: 'Marketplace',
+        value: 6,
+        prependIcon: 'mdi-store',
+        link: '/marketplace'
     }
 ]);
 </script>

@@ -10,11 +10,39 @@ import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Char "mo:base/Char";
 import Nat32 "mo:base/Nat32";
+import Error "mo:base/Error";
 //Import validator module
 import NFT_EXT_V1 "providers/nft-ext-v1";
 import NNS "providers/nns/nns";
 import Ledger "providers/ledger/transaction";
+import MarketplaceTypes "../marketplace/Types";
 module {
+    private let MARKETPLACE_CANISTER = "asrmz-lmaaa-aaaaa-qaaeq-cai"; // ID of marketplace canister
+    public func verifyMarketplaceProvider(
+        walletId: Types.WalletId, 
+        providerId: Text,
+        params: ?[MarketplaceTypes.ProviderParam],
+        criteria: Types.Criteria
+    ) : async Types.VerificationResult {
+        let marketplace = actor(MARKETPLACE_CANISTER) : actor {
+            verify : (Text, Principal, ?[MarketplaceTypes.ProviderParam]) -> async Types.VerificationResult;
+        };
+
+        try {
+            let result = await marketplace.verify(providerId, walletId, params);
+            {
+                isValid = result.isValid;
+                score = if (result.isValid) criteria.score else 0;
+                message = result.message;
+            }
+        } catch (e) {
+            {
+                isValid = false;
+                score = 0;
+                message = "Failed to verify with marketplace: " # Error.message(e);
+            }
+        };
+    };
     public func getNeuronIds() : async [Nat64] {
         return await NNS.get_neuron_ids();
     };
@@ -132,6 +160,25 @@ module {
                 switch (_moduleName) {
                     case _ return { isValid = false; score = 0; message = "Unknown module" };
                 };
+            };
+            case (#Marketplace(providerId)) {
+                // Call marketplace provider
+                return await verifyMarketplaceProvider(
+                    walletId,
+                    providerId,
+                    Option.map(
+                        providerParams,
+                        func(params: [Types.ProviderParams]) : [MarketplaceTypes.ProviderParam] {
+                            Array.map<Types.ProviderParams, MarketplaceTypes.ProviderParam>(
+                                params,
+                                func(p: Types.ProviderParams) : MarketplaceTypes.ProviderParam {
+                                    {key = p.key; value = Option.get(p.value, "")}
+                                }
+                            )
+                        }
+                    ),
+                    criteria
+                );
             };
             case _ {
                 return { isValid = false; score = 0; message = "Unknown module" };

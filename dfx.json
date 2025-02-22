@@ -4,6 +4,10 @@
             "main": "src/backend/main.mo",
             "type": "motoko"
         },
+        "marketplace": {
+            "main": "src/marketplace/main.mo",
+            "type": "motoko"
+        },
         "validate": {
             "type": "rust",
             "package": "validate",
