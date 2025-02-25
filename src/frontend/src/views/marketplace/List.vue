@@ -3,13 +3,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useWalletStore } from '@/store/walletStore'
-import { listProviders, reviewProvider } from '@/services/marketplaceService'
+import { listProviders, reviewProvider, getMyProviders } from '@/services/marketplaceService'
 import Dialog from '@/plugins/dialog'
 import Notify from '@/plugins/notify'
 const walletStore = useWalletStore()
 const loading = ref(false)
 const providers = ref([])
-
+const myProviders = ref([])
 const approvedHeaders = [
     { title: 'Name', value: 'name' },
     { title: 'Description', value: 'description' },
@@ -26,6 +26,15 @@ const pendingHeaders = [
     { title: 'Source', value: 'sourceUrl' },
     { title: 'Actions', value: 'actions' }
 ]
+const myHeaders = [
+    { title: 'Name', value: 'name' },
+    { title: 'Description', value: 'description' },
+    { title: 'Module', value: 'moduleName' },
+    { title: 'Status', value: 'status' },
+    { title: 'Source', value: 'sourceUrl' },
+    { title: 'reviewNote', value: 'reviewNote' },
+    { title: 'Actions', value: 'actions' }
+]
 // Computed properties for filtering
 const approvedProviders = computed(() =>
     providers.value.filter(p => getVariantType(p.status) === 'Approved')
@@ -36,8 +45,11 @@ const pendingProviders = computed(() =>
 )
 
 const reloadProviders = async () => {
+    providers.value = []
+    myProviders.value = []
     loading.value = true
     providers.value = await listProviders()
+    myProviders.value = await getMyProviders()
     loading.value = false
 }
 
@@ -45,9 +57,7 @@ const reloadProviders = async () => {
 onMounted(async () => {
     loading.value = true
     try {
-        const result = await listProviders()
-        console.log('result', result);
-        providers.value = result
+        reloadProviders()
     } catch (err) {
         console.error('Failed to load providers:', err)
     }
@@ -116,9 +126,14 @@ const reject = async (id) => {
         <v-col cols="12">
             <div class="d-flex justify-space-between align-center mb-6">
                 <h1 class="text-h6">Provider Marketplace</h1>
-                <v-btn color="primary" :to="{ path: '/marketplace/submit' }">
-                        Submit New Provider
+                <div>
+                    <v-btn color="primary" :to="{ path: '/marketplace/submit' }">
+                        Submit Provider <v-icon>mdi-plus</v-icon>
                     </v-btn>
+                    <v-btn color="default" @click="reloadProviders" class="ms-2">
+                        Refresh <v-icon>mdi-refresh</v-icon>
+                    </v-btn>
+                </div>
                 </div>
 
                 <!-- Approved Providers Section -->
@@ -138,13 +153,38 @@ const reject = async (id) => {
                             <template v-slot:item.actions="{ item }">
                                 <v-btn small text color="primary"
                                     :to="{ name: 'Provider', params: { providerId: item.id } }">
-                                    View Details
+                                    View
                                 </v-btn>
                             </template>
                         </v-data-table>
                     </v-card-text>
                 </v-card>
 
+                <v-card>
+                    <v-card-title class="d-flex align-center">
+                        <v-icon left>mdi-account-details</v-icon>
+                        My Providers
+                    </v-card-title>
+                    <v-card-text>
+                        <v-data-table :headers="myHeaders" :items="myProviders" :loading="loading">
+                            <template v-slot:item.status="{ item }">
+                                <v-chip :color="getStatusColor(getVariantType(item.status))" small>
+                                    {{ getVariantType(item.status) }}
+                                </v-chip>
+                            </template>
+
+                            <template v-slot:item.reviewNote="{ item }">
+                                {{ item.reviewNote ? item.reviewNote.length > 0 ? item.reviewNote : '--' : 'No review note' }}
+                            </template>
+                            <template v-slot:item.actions="{ item }">
+                                <v-btn small text color="primary"
+                                    :to="{ name: 'Provider', params: { providerId: item.id } }">
+                                    View
+                                </v-btn>
+                            </template>
+                        </v-data-table>
+                    </v-card-text>
+                </v-card>
                 <!-- Pending Providers Section (Admin Only) -->
                 <v-card>
                     <v-card-title class="d-flex align-center">

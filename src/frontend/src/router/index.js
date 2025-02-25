@@ -53,6 +53,11 @@ const routes = [
                         component: () => import('@/views/marketplace/Submit')
                     },
                     {
+                        path: 'testing',
+                        name: 'Testing',
+                        component: () => import('@/views/marketplace/Testing')
+                    },
+                    {
                         path: 'manage',
                         name: 'Manage',
                         component: () => import('@/views/marketplace/Manage')

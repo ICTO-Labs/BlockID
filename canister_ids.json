@@ -8,6 +8,9 @@
   "issuer": {
     "ic": "znqos-ziaaa-aaaap-qkmia-cai"
   },
+  "marketplace": {
+    "ic": "oglsc-raaaa-aaaap-qpwca-cai"
+  },
   "validate": {
     "ic": "uspxb-mqaaa-aaaap-qhxqq-cai"
   },

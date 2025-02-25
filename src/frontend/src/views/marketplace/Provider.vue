@@ -118,6 +118,12 @@ const getVariantType = (variant) => {
                                                 </v-list-item-subtitle>
                                             </v-list-item-content>
                                         </v-list-item>
+                                        <v-list-item>
+                                            <v-list-item-content>
+                                                <v-list-item-title>Canister ID</v-list-item-title>
+                                                <v-list-item-subtitle>{{ provider?.canisterId }}</v-list-item-subtitle>
+                                            </v-list-item-content>
+                                        </v-list-item>
 
                                         <v-list-item>
                                             <v-list-item-content>

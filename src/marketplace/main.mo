@@ -87,7 +87,8 @@ actor Marketplace {
         name: Text,
         description: Text,
         sourceUrl: Text,
-        moduleName: Text
+        moduleName: Text,
+        canisterId: ?Principal
     ) : async Result.Result<Text, Text> {
         //Check exist
         let _moduleName = removeSpecialChars(moduleName);
@@ -112,10 +113,10 @@ actor Marketplace {
             sourceUrl;
             status = #Pending;
             moduleName = _moduleName;
-            canisterId = null;
             submittedAt = Time.now();
             reviewNote = null;
             owner = msg.caller;
+            canisterId = canisterId;
         });
 
         #ok(moduleName)
@@ -156,6 +157,14 @@ actor Marketplace {
         providers.get(id)
     };
 
+    public shared ({caller}) func getMyProviders() : async [Types.ProviderInfo] {
+        Array.filter<Types.ProviderInfo>(
+            Iter.toArray(providers.vals()),
+            func(p) { 
+                Principal.equal(p.owner, caller)
+            }
+        )
+    };
     public query func listApprovedProviders() : async [Types.ProviderInfo] {
         Array.filter<Types.ProviderInfo>(
             Iter.toArray(providers.vals()),

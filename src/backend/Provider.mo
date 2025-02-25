@@ -17,7 +17,7 @@ import NNS "providers/nns/nns";
 import Ledger "providers/ledger/transaction";
 import MarketplaceTypes "../marketplace/Types";
 module {
-    private let MARKETPLACE_CANISTER = "asrmz-lmaaa-aaaaa-qaaeq-cai"; // ID of marketplace canister
+    private let MARKETPLACE_CANISTER = "oglsc-raaaa-aaaap-qpwca-cai"; // ID of marketplace canister
     public func verifyMarketplaceProvider(
         walletId: Types.WalletId, 
         providerId: Text,
@@ -25,22 +25,58 @@ module {
         criteria: Types.Criteria
     ) : async Types.VerificationResult {
         let marketplace = actor(MARKETPLACE_CANISTER) : actor {
+            getProvider : (Text) -> async ?MarketplaceTypes.ProviderInfo;
             verify : (Text, Principal, ?[MarketplaceTypes.ProviderParam]) -> async Types.VerificationResult;
         };
 
         try {
-            let result = await marketplace.verify(providerId, walletId, params);
-            {
-                isValid = result.isValid;
-                score = if (result.isValid) criteria.score else 0;
-                message = result.message;
-            }
+            switch(await marketplace.getProvider(providerId)) {
+                case null {
+                    return {
+                        isValid = false;
+                        score = 0;
+                        message = "Provider not found in marketplace";
+                    };
+                };
+                case (?provider) {
+                    switch(provider.status, provider.canisterId) {
+                        case (#Approved, ?canisterId) {
+                            // Call directly to provider canister
+                            let providerActor = actor(Principal.toText(canisterId)) : actor {
+                                verify : (Principal, ?[MarketplaceTypes.ProviderParam]) -> async Types.VerificationResult;
+                            };
+                            
+                            let result = await providerActor.verify(walletId, params);
+                            return {
+                                isValid = result.isValid;
+                                score = if (result.isValid) criteria.score else 0;
+                                message = result.message;
+                            };
+                        };
+                        case (#Approved, null) {//Use local provider
+                            let result = await marketplace.verify(providerId, walletId, params);
+                            return {
+                                isValid = result.isValid;
+                                score = if (result.isValid) criteria.score else 0;
+                                message = result.message;
+                            };
+                        };
+                        case _ {
+                            return {
+                                isValid = false;
+                                score = 0;
+                                message = "Provider not approved";
+                            };
+                        };
+                    };
+                };
+            };
         } catch (e) {
-            {
+            return {
                 isValid = false;
                 score = 0;
-                message = "Failed to verify with marketplace: " # Error.message(e);
-            }
+                message = "Failed to verify: " # Error.message(e);
+            };
         };
     };
     public func getNeuronIds() : async [Nat64] {
