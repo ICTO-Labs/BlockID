@@ -340,7 +340,7 @@ onMounted(async () => {
                                 height="25"
                             >
                                 <template v-slot:default="{ value }">
-                                    <strong>{{ formatPercentage(value) }}%</strong>
+                                    <strong>{{ formatPercentage(item.successRate) }}%</strong>
                                 </template>
                             </v-progress-linear>
                         </template>
