@@ -75,7 +75,12 @@ pub struct UserEventData {
     pub joined_timestamp_s: u32,
     pub event_name: EventName,
 }
-
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct VerifiedScoreDebugEntry {
+    timestamp: u64,
+    blockid_principal: Principal,
+    target_principal: Principal,
+}
 // Internal container of per-user data.
 #[derive(CandidType, Clone, Deserialize)]
 struct EarlyAdopterData {
@@ -188,7 +193,7 @@ thread_local! {
     // Assets for the management app
     static ASSETS: RefCell<CertifiedAssets> = RefCell::new(CertifiedAssets::default());
 
-
+    static DEBUG_LOGS: RefCell<Vec<VerifiedScoreDebugEntry>> = RefCell::new(Vec::new());
 
 }
 
@@ -196,6 +201,17 @@ lazy_static! {
     // Seed and public key used for signing the credentials.
     static ref CANISTER_SIG_SEED: Vec<u8> = hash_bytes("EarlyAdopter").to_vec();
     static ref CANISTER_SIG_PK: CanisterSigPublicKey = CanisterSigPublicKey::new(ic_cdk::id(), CANISTER_SIG_SEED.clone());
+}
+
+fn add_verified_score_debug_log(principal: Principal, target_principal: Principal) {
+    DEBUG_LOGS.with(|logs| {
+        let mut logs = logs.borrow_mut();
+        logs.push(VerifiedScoreDebugEntry {
+            timestamp: time() / 1_000_000, // Convert to milliseconds
+            blockid_principal: principal,
+            target_principal: target_principal,
+        });
+    });
 }
 
 /// Reserve the first stable memory page for the configuration stable cell.
@@ -978,6 +994,8 @@ async fn prepare_credential_jwt(
             Ok(verified_credential(alias_tuple.id_alias, credential_spec))
         }
         Ok(SupportedCredentialType::VerifiedScore(required_score)) => {
+            add_verified_score_debug_log(alias_tuple.id_alias, alias_tuple.id_dapp);
+
             let _credential = verify_verified_score_principal_registered_and_authorized(
                 alias_tuple.id_dapp,
                 required_score,
@@ -992,6 +1010,14 @@ async fn prepare_credential_jwt(
         }
         Err(err) => Err(err),
     }
+}
+// Add API to view logs
+#[query]
+#[candid_method(query)]
+fn get_verified_score_debug_logs() -> Vec<VerifiedScoreDebugEntry> {
+    DEBUG_LOGS.with(|logs| {
+        logs.borrow().clone()
+    })
 }
 async fn verify_verified_score_principal_registered_and_authorized(
     user: Principal,

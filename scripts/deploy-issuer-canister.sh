@@ -69,7 +69,8 @@ do
 done
 
 DFX_NETWORK="${DFX_NETWORK:-local}"
-II_CANISTER_ID="${II_CANISTER_ID:-$(dfx canister id internet_identity --network "$DFX_NETWORK")}"
+II_CANISTER_ID="rdmx6-jaaaa-aaaaa-aaadq-cai"
+# II_CANISTER_ID="${II_CANISTER_ID:-$(dfx canister id internet_identity --network "$DFX_NETWORK")}"
 ISSUER_CANISTER_ID="${ISSUER_CANISTER_ID:-$(dfx canister id issuer --network "$DFX_NETWORK")}"
 if [ "$DFX_NETWORK" = "local" ]; then
   REPLICA_SERVER_PORT=$(dfx info webserver-port)
